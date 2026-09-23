@@ -1,8 +1,8 @@
 // Clean English dictionary for Dukaan
 const dict = {
   en: {
-    app_name: "Dukaan",
-    tagline: "Your Shop. Your Sales. Your Stock. All in One Place.",
+    app_name: "Kivo",
+    tagline: "Business Made Simple",
     subtag: "Simple billing, stock management, customer records and udhaar tracking made for small businesses.",
     start_free: "Start Free",
     see_demo: "See Features",

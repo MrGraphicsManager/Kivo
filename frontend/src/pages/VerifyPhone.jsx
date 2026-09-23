@@ -9,11 +9,11 @@ import {
   CheckCircle2, 
   ArrowRight, 
   RotateCw, 
-  ShieldCheck,
-  AlertCircle,
-  PhoneCall,
-  Edit3,
-  MessageCircle
+  ShieldCheck, 
+  AlertCircle, 
+  PhoneCall, 
+  Edit3, 
+  MessageCircle 
 } from "lucide-react";
 import Card3D from "@/components/Card3D";
 import ThreeDBackground from "@/components/ThreeDBackground";
@@ -207,25 +207,25 @@ export default function VerifyPhone() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-[#090C10] text-slate-100 font-sans selection:bg-blue-500/30 selection:text-blue-400 flex flex-col justify-between">
+    <div className="min-h-screen relative overflow-hidden bg-[#F8FAFC] text-slate-900 font-sans selection:bg-blue-600/20 selection:text-blue-700 flex flex-col justify-between">
       
       {/* Ambient glowing blooms */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[450px] bg-gradient-to-b from-blue-600/20 via-indigo-600/10 to-transparent blur-[120px] rounded-full" />
-        <div className="absolute top-[40%] right-[-10%] w-[500px] h-[500px] bg-purple-600/10 blur-[140px] rounded-full" />
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[450px] bg-gradient-to-b from-blue-400/10 via-indigo-400/5 to-transparent blur-[120px] rounded-full" />
+        <div className="absolute top-[40%] right-[-10%] w-[500px] h-[500px] bg-purple-400/10 blur-[140px] rounded-full" />
       </div>
 
       {/* Top Brand Header */}
       <header className="relative z-20 max-w-7xl mx-auto w-full px-6 py-6 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3 group">
-          <div className="flex items-center px-2.5 py-1 rounded-xl bg-white/95 backdrop-blur-md shadow-md border border-white/20 group-hover:scale-105 transition-transform">
+          <div className="flex items-center px-1.5 py-0.5 rounded-xl group-hover:scale-105 transition-transform">
             <img 
-              src="/dukaan-logo.png" 
-              alt="Dukaan" 
-              className="h-6 sm:h-7 w-auto object-contain" 
+              src="/kivo-logo.png" 
+              alt="Kivo" 
+              className="h-7 sm:h-8 w-auto object-contain" 
             />
           </div>
-          <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono uppercase tracking-widest bg-blue-500/10 text-blue-400 border border-blue-500/20">
+          <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono uppercase tracking-widest bg-blue-50 text-blue-700 border border-blue-200">
             Retail OS
           </span>
         </Link>
@@ -233,7 +233,7 @@ export default function VerifyPhone() {
         <div className="flex items-center gap-3">
           <Link 
             to="/login" 
-            className="text-xs font-bold px-4 py-2 rounded-full border border-white/20 text-white hover:border-blue-500 bg-white/5 hover:bg-white/10 backdrop-blur-md shadow-xs active:scale-95 transition-all"
+            className="text-xs font-bold px-4 py-2 rounded-full border border-slate-300 text-slate-700 hover:border-blue-600 hover:text-blue-600 bg-white hover:bg-slate-50 shadow-xs active:scale-95 transition-all"
           >
             Back to Sign In
           </Link>
@@ -243,24 +243,24 @@ export default function VerifyPhone() {
       {/* Verification Card Stage */}
       <main className="relative z-20 max-w-md mx-auto w-full px-6 py-6 my-auto">
         <Card3D depth={12}>
-          <div className="bg-slate-900/70 backdrop-blur-2xl p-8 sm:p-10 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden">
+          <div className="bg-white p-8 sm:p-10 rounded-3xl border border-slate-200 shadow-2xl relative overflow-hidden">
             
             {/* Invisible Google reCAPTCHA Container */}
             <div id="recaptcha-container"></div>
 
             {/* Top Accent Strip */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-sky-400 to-indigo-500" />
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-sky-500 to-indigo-600" />
 
             {/* STEP 3: SUCCESS STATE */}
             {step === 3 && (
               <div className="text-center py-6 space-y-4">
-                <div className="w-16 h-16 mx-auto rounded-3xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 grid place-items-center shadow-sm">
+                <div className="w-16 h-16 mx-auto rounded-3xl bg-emerald-50 text-emerald-600 border border-emerald-200 grid place-items-center shadow-xs">
                   <CheckCircle2 className="w-9 h-9 animate-bounce" />
                 </div>
-                <h2 className="font-display text-2xl font-bold text-white">
+                <h2 className="font-display text-2xl font-bold text-slate-900">
                   Mobile Verified!
                 </h2>
-                <p className="text-xs text-slate-400 font-medium">
+                <p className="text-xs text-slate-600 font-medium">
                   {checkHasActiveSub() 
                     ? "Your phone number is confirmed. Redirecting you to your store dashboard..."
                     : "Your phone number is confirmed. Redirecting you to choose your subscription plan..."
@@ -269,7 +269,7 @@ export default function VerifyPhone() {
                 <div className="pt-2">
                   <Button
                     onClick={() => nav(checkHasActiveSub() ? "/app" : "/subscribe")}
-                    className="w-full h-11 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-blue-600/30 cursor-pointer"
+                    className="w-full h-11 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs shadow-lg shadow-blue-600/25 cursor-pointer"
                   >
                     {checkHasActiveSub() ? "Open Dashboard" : "Continue to Plans"} <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
@@ -281,42 +281,42 @@ export default function VerifyPhone() {
             {step === 1 && (
               <div>
                 <div className="text-center mb-6">
-                  <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-blue-500/10 text-blue-400 grid place-items-center border border-blue-500/20">
+                  <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-blue-50 text-blue-600 grid place-items-center border border-blue-200">
                     <Smartphone className="w-7 h-7" />
                   </div>
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-[10px] font-bold text-blue-300 mb-2">
-                    <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-[10px] font-bold text-blue-700 mb-2">
+                    <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
                     <span>Step 2 of 3: Mobile Verification</span>
                   </div>
-                  <h2 className="font-display text-2xl font-bold text-white">
+                  <h2 className="font-display text-2xl font-bold text-slate-900">
                     Verify Your Phone
                   </h2>
-                  <p className="text-xs text-slate-400 font-medium mt-1">
+                  <p className="text-xs text-slate-500 font-medium mt-1">
                     Enter your 10-digit mobile number to receive your 6-digit OTP.
                   </p>
                   {email && (
-                    <p className="text-[11px] font-mono text-slate-500 mt-1">
+                    <p className="text-[11px] font-mono text-slate-400 mt-1">
                       Account: {email}
                     </p>
                   )}
                 </div>
 
                 {err && (
-                  <div className="mb-4 p-3.5 rounded-2xl bg-red-500/10 border border-red-500/20 text-xs text-red-300 font-semibold flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                  <div className="mb-4 p-3.5 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-700 font-semibold flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
                     <span>{err}</span>
                   </div>
                 )}
 
                 <form onSubmit={handleSendOtp} className="space-y-4">
                   <div className="text-left">
-                    <label className="text-[11px] font-bold uppercase tracking-wider text-slate-300 block mb-1">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-slate-700 block mb-1">
                       Mobile Number
                     </label>
                     <div className="relative flex items-center">
-                      <div className="absolute left-3.5 flex items-center gap-1 text-slate-400 text-sm font-bold pointer-events-none select-none">
+                      <div className="absolute left-3.5 flex items-center gap-1 text-slate-500 text-sm font-bold pointer-events-none select-none">
                         <span>🇮🇳 +91</span>
-                        <span className="text-slate-600">|</span>
+                        <span className="text-slate-300">|</span>
                       </div>
                       <Input
                         type="tel"
@@ -325,10 +325,10 @@ export default function VerifyPhone() {
                         value={phone}
                         onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
                         placeholder="98765 43210"
-                        className="h-12 pl-24 text-base font-bold tracking-wider rounded-2xl border border-white/10 focus:border-blue-500 text-white bg-slate-950/60"
+                        className="h-12 pl-24 text-base font-bold tracking-wider rounded-2xl border border-slate-200 focus:border-blue-600 focus:bg-white text-slate-900 bg-slate-50"
                       />
                     </div>
-                    <p className="text-[10px] text-slate-500 mt-1">
+                    <p className="text-[10px] text-slate-400 mt-1">
                       We will send a 6-digit verification code via SMS & dual email alert.
                     </p>
                   </div>
@@ -336,15 +336,15 @@ export default function VerifyPhone() {
                   <Button
                     type="submit"
                     disabled={busy || phone.length < 10}
-                    className="w-full h-12 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold shadow-lg shadow-blue-600/30 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                    className="w-full h-12 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold shadow-lg shadow-blue-600/25 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                   >
                     {busy ? "Sending 6-Digit OTP..." : "Send Verification Code"}
                     <ArrowRight className="w-4 h-4" />
                   </Button>
                 </form>
 
-                <div className="mt-6 pt-5 border-t border-white/10 text-center">
-                  <p className="text-[11px] text-slate-500">
+                <div className="mt-6 pt-5 border-t border-slate-200 text-center">
+                  <p className="text-[11px] text-slate-400">
                     By continuing, you verify that this mobile number is active and owned by you.
                   </p>
                 </div>
@@ -355,27 +355,27 @@ export default function VerifyPhone() {
             {step === 2 && (
               <div>
                 <div className="text-center mb-6">
-                  <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-blue-500/10 text-blue-400 grid place-items-center border border-blue-500/20">
+                  <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-blue-50 text-blue-600 grid place-items-center border border-blue-200">
                     <PhoneCall className="w-7 h-7" />
                   </div>
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-[10px] font-bold text-blue-300 mb-2">
-                    <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-[10px] font-bold text-blue-700 mb-2">
+                    <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
                     <span>Enter 6-Digit Code</span>
                   </div>
-                  <h2 className="font-display text-2xl font-bold text-white">
+                  <h2 className="font-display text-2xl font-bold text-slate-900">
                     Verify OTP
                   </h2>
-                  <p className="text-xs text-slate-400 font-medium mt-1">
+                  <p className="text-xs text-slate-500 font-medium mt-1">
                     We've sent a 6-digit code to:
                   </p>
                   <div className="inline-flex items-center gap-2 mt-1">
-                    <span className="text-xs font-bold font-mono text-blue-400">
+                    <span className="text-xs font-bold font-mono text-blue-600">
                       +91 {phone.slice(0, 5)} {phone.slice(5)}
                     </span>
                     <button
                       type="button"
                       onClick={() => { setStep(1); setOtp(""); setErr(""); }}
-                      className="text-[11px] text-slate-400 hover:text-blue-300 flex items-center gap-0.5 underline font-medium cursor-pointer"
+                      className="text-[11px] text-slate-400 hover:text-blue-600 flex items-center gap-0.5 underline font-medium cursor-pointer"
                     >
                       <Edit3 className="w-3 h-3" /> Edit
                     </button>
@@ -383,57 +383,57 @@ export default function VerifyPhone() {
                 </div>
 
                 {demoOtp && (
-                  <div className="mb-4 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-left">
+                  <div className="mb-4 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-left">
                     <div className="flex items-center justify-between gap-2 mb-1.5">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700">
                         {smsActive ? "SMS Dispatched" : "OTP Code"}
                       </span>
                       {email && (
-                        <span className="text-[10px] font-medium text-amber-300/80 truncate max-w-[180px]">
+                        <span className="text-[10px] font-medium text-amber-600 truncate max-w-[180px]">
                           Backup sent to {email}
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center justify-between gap-3 bg-slate-950/80 p-3 rounded-xl border border-white/10">
-                      <span className="font-mono font-black text-2xl tracking-[0.35em] text-emerald-400 pl-2 select-all">
+                    <div className="flex items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200">
+                      <span className="font-mono font-black text-2xl tracking-[0.35em] text-emerald-600 pl-2 select-all">
                         {demoOtp}
                       </span>
                       <div className="flex items-center gap-2">
                         <a
-                          href={`https://wa.me/91${phone}?text=${encodeURIComponent(`Your Dukaan verification OTP is ${demoOtp}. Valid for 10 minutes.`)}`}
+                          href={`https://wa.me/91${phone}?text=${encodeURIComponent(`Your Kivo verification OTP is ${demoOtp}. Valid for 10 minutes.`)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 font-bold text-[11px] transition-all"
+                          className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold text-[11px] transition-all"
                         >
-                          <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
+                          <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
                           <span className="hidden sm:inline">WhatsApp</span>
                         </a>
                         <Button
                           type="button"
                           size="sm"
                           onClick={() => setOtp(demoOtp)}
-                          className="h-8 px-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shrink-0 cursor-pointer shadow-sm"
+                          className="h-8 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shrink-0 cursor-pointer shadow-xs"
                         >
                           Auto-fill
                         </Button>
                       </div>
                     </div>
-                    <p className="text-[11px] text-slate-400 mt-2 leading-tight flex items-center justify-between">
+                    <p className="text-[11px] text-slate-500 mt-2 leading-tight flex items-center justify-between">
                       <span>Instant 100% Free Verification · Code delivered to email & screen</span>
                     </p>
                   </div>
                 )}
 
                 {err && (
-                  <div className="mb-4 p-3.5 rounded-2xl bg-red-500/10 border border-red-500/20 text-xs text-red-300 font-semibold flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                  <div className="mb-4 p-3.5 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-700 font-semibold flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
                     <span>{err}</span>
                   </div>
                 )}
 
                 <form onSubmit={handleVerifyOtp} className="space-y-4">
                   <div className="text-left">
-                    <label className="text-[11px] font-bold uppercase tracking-wider text-slate-300 block mb-1 text-center">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-slate-700 block mb-1 text-center">
                       Enter 6-Digit Mobile OTP
                     </label>
                     <Input
@@ -444,22 +444,22 @@ export default function VerifyPhone() {
                       value={otp}
                       onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
                       placeholder="• • • • • •"
-                      className="h-14 text-center text-2xl font-bold font-mono tracking-widest rounded-2xl border border-white/10 focus:border-blue-500 text-white bg-slate-950/60"
+                      className="h-14 text-center text-2xl font-bold font-mono tracking-widest rounded-2xl border border-slate-200 focus:border-blue-600 text-slate-900 bg-slate-50"
                     />
                   </div>
 
                   <Button
                     type="submit"
                     disabled={busy || otp.length < 6}
-                    className="w-full h-12 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold shadow-lg shadow-blue-600/30 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                    className="w-full h-12 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold shadow-lg shadow-blue-600/25 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                   >
                     {busy ? "Verifying OTP..." : "Verify Mobile & Continue"}
                     <ArrowRight className="w-4 h-4" />
                   </Button>
                 </form>
 
-                <div className="mt-6 pt-5 border-t border-white/10 text-center space-y-2">
-                  <p className="text-xs text-slate-400">
+                <div className="mt-6 pt-5 border-t border-slate-200 text-center space-y-2">
+                  <p className="text-xs text-slate-500">
                     Didn't receive the OTP SMS?
                   </p>
                   <Button
@@ -468,7 +468,7 @@ export default function VerifyPhone() {
                     size="sm"
                     disabled={resending || cooldown > 0}
                     onClick={handleResend}
-                    className="rounded-full border border-white/20 text-xs font-bold text-slate-200 hover:text-white hover:border-blue-500 bg-white/5 cursor-pointer"
+                    className="rounded-full border border-slate-300 text-xs font-bold text-slate-700 hover:text-blue-600 hover:border-blue-600 bg-white cursor-pointer"
                   >
                     <RotateCw className={`w-3.5 h-3.5 mr-1.5 ${resending ? "animate-spin" : ""}`} />
                     {cooldown > 0 ? `Resend OTP in ${cooldown}s` : "Resend OTP"}
@@ -482,8 +482,8 @@ export default function VerifyPhone() {
       </main>
 
       {/* Footer */}
-      <footer className="relative z-20 max-w-7xl mx-auto w-full px-6 py-4 text-center text-xs text-slate-500">
-        Dukaan Retail OS · A Product of PEAN · © 2026
+      <footer className="relative z-20 max-w-7xl mx-auto w-full px-6 py-4 text-center text-xs text-slate-400">
+        Kivo Retail OS · Business Made Simple · © 2026
       </footer>
 
     </div>

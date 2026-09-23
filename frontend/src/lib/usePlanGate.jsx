@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Crown, ArrowRight } from "lucide-react";
 
 const TIER = { starter: 1, business: 2, cafe: 2.5, premium: 3, pro: 4 };
-const NAMES = { business: "Business", premium: "Premium", pro: "Dukaan Pro" };
+const NAMES = { business: "Business", premium: "Premium", pro: "Kivo Pro" };
 
 /**
  * Wrap a feature/link. If user's plan is below `requiredPlan`, clicks show an upgrade dialog

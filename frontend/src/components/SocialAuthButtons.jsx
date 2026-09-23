@@ -203,7 +203,7 @@ export default function SocialAuthButtons({ mode = "login", onSuccess }) {
 
           <h2 className="text-xl font-bold text-slate-900 tracking-tight">Sign in with Apple ID</h2>
           <p className="text-xs text-slate-500 mt-1 mb-5">
-            Use your Apple ID to sign in to Dukaan. Instant verified access.
+            Use your Apple ID to sign in to Kivo. Instant verified access.
           </p>
 
           <form onSubmit={submitAppleAuth} className="space-y-3.5 text-left">

@@ -3,11 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Store, LayoutDashboard, BarChart3, Sparkles, CheckCircle2, ArrowRight } from 'lucide-react';
 
 const steps = [
-  { text: "Setting up your Dukaan...", icon: Store, duration: 280 },
+  { text: "Setting up your Kivo...", icon: Store, duration: 280 },
   { text: "Preparing your dashboard...", icon: LayoutDashboard, duration: 280 },
   { text: "Loading your business...", icon: BarChart3, duration: 280 },
   { text: "Almost ready...", icon: Sparkles, duration: 240 },
-  { text: "Welcome to Dukaan!", icon: CheckCircle2, duration: 180 },
+  { text: "Welcome to Kivo!", icon: CheckCircle2, duration: 180 },
 ];
 
 const TOTAL_DURATION = steps.reduce((acc, step) => acc + step.duration, 0); // ~1260ms
@@ -76,16 +76,15 @@ const OnboardingLoader = ({ onComplete }) => {
   const CurrentIcon = steps[currentStep]?.icon || Sparkles;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/95 backdrop-blur-xl text-white min-h-screen select-none px-4">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#F8FAFC]/95 backdrop-blur-xl text-slate-900 min-h-screen select-none px-4">
       {/* Top Logo */}
       <motion.div 
         initial={{ opacity: 0, y: -15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="absolute top-10 flex items-center gap-2.5"
+        className="absolute top-10 flex items-center justify-center"
       >
-        <img src="/logo.png" alt="Dukaan" className="h-9 w-auto object-contain" />
-        <span className="font-display text-2xl font-bold tracking-tight text-white">Dukaan</span>
+        <img src="/kivo-logo.png" alt="Kivo" className="h-9 w-auto object-contain" />
       </motion.div>
 
       <div className="w-full max-w-sm px-6 flex flex-col items-center">
@@ -100,10 +99,10 @@ const OnboardingLoader = ({ onComplete }) => {
               transition={{ duration: 0.2 }}
               className="flex flex-col items-center text-center absolute"
             >
-              <div className="w-14 h-14 rounded-2xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center mb-3 text-blue-400 shadow-lg shadow-blue-500/20">
+              <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center mb-3 text-blue-600 shadow-sm">
                 <CurrentIcon size={26} strokeWidth={2} />
               </div>
-              <h2 className="text-lg font-bold text-white tracking-tight">
+              <h2 className="text-lg font-bold text-slate-900 tracking-tight">
                 {steps[currentStep]?.text || "Loading..."}
               </h2>
             </motion.div>
@@ -112,9 +111,9 @@ const OnboardingLoader = ({ onComplete }) => {
 
         {/* Progress Bar */}
         <div className="w-full mt-6">
-          <div className="h-2 w-full bg-slate-800/80 rounded-full overflow-hidden p-0.5 border border-slate-700/50">
+          <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden p-0.5 border border-slate-300">
             <motion.div
-              className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-400 rounded-full"
+              className="h-full bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-500 rounded-full"
               style={{ width: `${progress}%` }}
               layout
             />
@@ -124,7 +123,7 @@ const OnboardingLoader = ({ onComplete }) => {
         {/* Manual continue if user doesn't want to wait */}
         <button
           onClick={triggerComplete}
-          className="mt-8 text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1.5 transition-colors py-1.5 px-3 rounded-lg hover:bg-slate-800/50"
+          className="mt-8 text-xs font-semibold text-slate-500 hover:text-slate-900 flex items-center gap-1.5 transition-colors py-1.5 px-3 rounded-lg hover:bg-slate-100 cursor-pointer"
         >
           <span>Continue directly</span>
           <ArrowRight className="w-3.5 h-3.5" />

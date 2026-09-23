@@ -43,7 +43,7 @@ export default function DesktopOnlyNotice({ target = 'dashboard' }) {
 
   const handleShareWhatsApp = () => {
     const text = encodeURIComponent(
-      `Open Dukaan POS on your Counter PC / Laptop:\n${pcUrl}\n\n(Keyboard shortcuts, thermal printer and khata ledger)`
+      `Open Kivo POS on your Counter PC / Laptop:\n${pcUrl}\n\n(Keyboard shortcuts, thermal printer and khata ledger)`
     );
     window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
   };
@@ -61,14 +61,10 @@ export default function DesktopOnlyNotice({ target = 'dashboard' }) {
       <header className="relative z-10 max-w-md mx-auto w-full flex items-center justify-between pt-2 pb-4 border-b border-slate-200 px-1">
         <Link to="/" className="flex items-center gap-2 group shrink-0">
           <img 
-            src="/logo.png" 
-            alt="Dukaan" 
+            src="/kivo-logo.png" 
+            alt="Kivo" 
             className="h-7 sm:h-8 w-auto object-contain drop-shadow-sm" 
           />
-          <div className="flex flex-col border-l border-slate-300 pl-2">
-            <span className="text-[8px] font-bold uppercase tracking-wider text-slate-400 font-mono leading-none">by</span>
-            <span className="text-[11px] font-display font-extrabold tracking-tight text-slate-900 leading-tight">PEAN</span>
-          </div>
         </Link>
 
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-50 border border-orange-200 text-[10px] font-bold text-orange-700 shrink-0">
@@ -99,13 +95,13 @@ export default function DesktopOnlyNotice({ target = 'dashboard' }) {
           <h1 className="font-display text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight leading-snug px-1">
             {isSub 
               ? 'Subscriptions are Available on Desktop & Laptop' 
-              : 'Dukaan Counter POS is Built for Desktop & Laptop'}
+              : 'Kivo Counter POS is Built for Desktop & Laptop'}
           </h1>
           
           <p className="mt-2.5 text-xs sm:text-sm text-slate-600 leading-relaxed max-w-md mx-auto px-2 font-medium">
             {isSub
-              ? 'To subscribe, configure billing plans, and set up your shop POS terminal, please open Dukaan on your computer.'
-              : 'The Dukaan Store Management & Billing Terminal is exclusively optimized for PC screens, billing counters, and laptop keyboards.'}
+              ? 'To subscribe, configure billing plans, and set up your shop POS terminal, please open Kivo on your computer.'
+              : 'The Kivo Store Management & Billing Terminal is exclusively optimized for PC screens, billing counters, and laptop keyboards.'}
           </p>
         </div>
 
@@ -199,7 +195,7 @@ export default function DesktopOnlyNotice({ target = 'dashboard' }) {
       {/* Footer */}
       <footer className="relative z-10 max-w-xl mx-auto w-full text-center pt-4 pb-2 border-t border-slate-200 text-[11px] text-slate-500 flex items-center justify-between">
         <span>officialdukaan.in</span>
-        <span>© 2026 Dukaan · by PEAN</span>
+        <span>© 2026 Kivo · Business Made Simple</span>
       </footer>
 
     </div>

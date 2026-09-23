@@ -12,7 +12,7 @@ export default class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error("Dukaan UI Error Caught:", error, errorInfo);
+    console.error("Kivo UI Error Caught:", error, errorInfo);
   }
 
   handleReload = () => {
@@ -29,16 +29,16 @@ export default class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-[#FAF6F0] flex flex-col items-center justify-center p-6 text-center font-sans">
-          <div className="max-w-md w-full bg-white p-8 rounded-3xl border-2 border-[#EBE3D5] shadow-xl space-y-5">
-            <div className="w-14 h-14 mx-auto rounded-2xl bg-[#1B1464] text-white grid place-items-center shadow-md">
-              <Store className="w-7 h-7 text-amber-400" />
+        <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-6 text-center font-sans">
+          <div className="max-w-md w-full bg-white p-8 rounded-3xl border border-slate-200 shadow-xl space-y-5">
+            <div className="flex justify-center mb-2">
+              <img src="/kivo-logo.png" alt="Kivo" className="h-8 w-auto object-contain" />
             </div>
             <div>
-              <h2 className="font-display text-2xl font-bold text-[#1B1464]">
-                Dukaan Workspace Restored
+              <h2 className="font-display text-2xl font-bold text-slate-900">
+                Kivo Workspace Restored
               </h2>
-              <p className="text-xs text-[#1B1464]/70 mt-1 font-medium">
+              <p className="text-xs text-slate-500 mt-1 font-medium">
                 Your workspace state has been verified and synchronized. Click below to open your counter dashboard.
               </p>
             </div>
@@ -51,10 +51,10 @@ export default class ErrorBoundary extends React.Component {
 
             <button
               onClick={this.handleReload}
-              className="w-full h-12 rounded-full bg-[#D4623B] hover:bg-[#D4623B]/90 text-white font-bold text-sm shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full h-12 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-sm shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <RotateCcw className="w-4 h-4" />
-              <span>Enter Dukaan Dashboard</span>
+              <span>Enter Kivo Dashboard</span>
             </button>
           </div>
         </div>

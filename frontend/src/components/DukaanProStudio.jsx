@@ -456,7 +456,7 @@ export default function DukaanProStudio({ user, currentShop, isPro }) {
           {!isPro && (
             <div className="shrink-0 bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl flex flex-col gap-2 max-w-xs">
               <div className="flex items-center gap-2 text-amber-300 font-bold text-xs">
-                <Crown className="w-4 h-4" /> 14-Day Free Dukaan Pro Trial
+                <Crown className="w-4 h-4" /> 14-Day Free Kivo Pro Trial
               </div>
               <p className="text-white/70 text-xs">
                 Test all 5 Pro features risk-free with zero commitment.
@@ -465,7 +465,7 @@ export default function DukaanProStudio({ user, currentShop, isPro }) {
                 onClick={() => nav("/subscribe?plan=pro")}
                 className="w-full h-9 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-extrabold text-xs shadow-md transition-all active:scale-95"
               >
-                Upgrade to Dukaan Pro
+                Upgrade to Kivo Pro
               </Button>
             </div>
           )}

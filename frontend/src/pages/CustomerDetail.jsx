@@ -129,7 +129,7 @@ export default function CustomerDetail() {
 
   const waLink = () => {
     const phone = (c.phone || "").replace(/\D/g, "");
-    const msg = `Hello ${c.name}, here is your account statement from Dukaan: Total purchases ${money(totals.purchases)}, Outstanding balance ${money(totals.pending)}. Thank you!`;
+    const msg = `Hello ${c.name}, here is your account statement from Kivo: Total purchases ${money(totals.purchases)}, Outstanding balance ${money(totals.pending)}. Thank you!`;
     return `https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`;
   };
 

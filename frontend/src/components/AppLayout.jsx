@@ -493,7 +493,7 @@ export default function AppLayout() {
           Scheduled Platform Maintenance
         </span>
         <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight max-w-lg mb-3">
-          Dukaan is Updating
+          Kivo is Updating
         </h1>
         <p className="text-sm text-slate-400 max-w-md mb-6 leading-relaxed">
           Our engineering team is currently deploying an upgrade to enhance system security and speed. All merchant data is safe and transactions will resume momentarily.
@@ -533,19 +533,9 @@ export default function AppLayout() {
           DESKTOP SIDEBAR (Full-height sticky on the left)
       ===================================================== */}
       <aside className="hidden md:flex flex-col w-60 xl:w-64 shrink-0 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 h-screen sticky top-0 z-40">
-        {/* Logo & Tagline (Matching Screenshot) */}
+        {/* Logo & Tagline */}
         <div className="p-4 sm:p-5 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-black flex items-center justify-center text-white shadow-sm shrink-0">
-            <ShoppingBag className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="font-bold text-lg text-slate-900 dark:text-white leading-tight">
-              Dukaan
-            </div>
-            <div className="text-[11px] text-slate-400 font-medium mt-0.5">
-              Business, Simplified.
-            </div>
-          </div>
+          <img src="/kivo-logo.png" alt="Kivo" className="h-8 w-auto object-contain" />
         </div>
 
         {/* Navigation Links (Matching Screenshot: 8 items) */}
@@ -724,10 +714,7 @@ export default function AppLayout() {
             >
               <Menu className="w-5 h-5" />
             </button>
-            <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center text-white shrink-0">
-              <ShoppingBag className="w-4 h-4" />
-            </div>
-            <span className="font-bold text-base text-slate-900 dark:text-white">Dukaan</span>
+            <img src="/kivo-logo.png" alt="Kivo" className="h-7 w-auto object-contain" />
           </div>
 
           {/* Center/Left: Search Bar (Matching Screenshot) */}
@@ -901,8 +888,8 @@ export default function AppLayout() {
             <div className="p-4 border-b border-brand-mitti/60 flex items-center justify-between bg-brand-sand/40">
               <div className="flex items-center gap-2.5">
                 <img 
-                  src={isPremium ? "/logo-premium.png" : "/logo.png"} 
-                  alt="Dukaan" 
+                  src="/kivo-logo.png" 
+                  alt="Kivo" 
                   className="h-8 w-auto object-contain" 
                 />
                 <div>

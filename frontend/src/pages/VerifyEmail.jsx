@@ -107,25 +107,25 @@ export default function VerifyEmail() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-[#090C10] text-slate-100 font-sans selection:bg-blue-500/30 selection:text-blue-400 flex flex-col justify-between">
+    <div className="min-h-screen relative overflow-hidden bg-[#F8FAFC] text-slate-900 font-sans selection:bg-blue-600/20 selection:text-blue-700 flex flex-col justify-between">
       
       {/* Ambient glowing blooms */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[450px] bg-gradient-to-b from-blue-600/20 via-indigo-600/10 to-transparent blur-[120px] rounded-full" />
-        <div className="absolute top-[40%] right-[-10%] w-[500px] h-[500px] bg-purple-600/10 blur-[140px] rounded-full" />
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[450px] bg-gradient-to-b from-blue-400/10 via-indigo-400/5 to-transparent blur-[120px] rounded-full" />
+        <div className="absolute top-[40%] right-[-10%] w-[500px] h-[500px] bg-sky-400/10 blur-[140px] rounded-full" />
       </div>
 
       {/* Top Brand Header */}
       <header className="relative z-20 max-w-7xl mx-auto w-full px-6 py-6 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3 group">
-          <div className="flex items-center px-2.5 py-1 rounded-xl bg-white/95 backdrop-blur-md shadow-md border border-white/20 group-hover:scale-105 transition-transform">
+          <div className="flex items-center px-1.5 py-0.5 rounded-xl group-hover:scale-105 transition-transform">
             <img 
-              src="/dukaan-logo.png" 
-              alt="Dukaan" 
-              className="h-6 sm:h-7 w-auto object-contain" 
+              src="/kivo-logo.png" 
+              alt="Kivo" 
+              className="h-7 sm:h-8 w-auto object-contain" 
             />
           </div>
-          <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono uppercase tracking-widest bg-blue-500/10 text-blue-400 border border-blue-500/20">
+          <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono uppercase tracking-widest bg-blue-50 text-blue-700 border border-blue-200">
             Retail OS
           </span>
         </Link>
@@ -133,7 +133,7 @@ export default function VerifyEmail() {
         <div className="flex items-center gap-3">
           <Link 
             to="/login" 
-            className="text-xs font-bold px-4 py-2 rounded-full border border-white/20 text-white hover:border-blue-500 bg-white/5 hover:bg-white/10 backdrop-blur-md shadow-xs active:scale-95 transition-all"
+            className="text-xs font-bold px-4 py-2 rounded-full border border-slate-300 text-slate-700 hover:border-blue-600 hover:text-blue-600 bg-white hover:bg-slate-50 shadow-xs active:scale-95 transition-all"
           >
             Back to Sign In
           </Link>
@@ -143,26 +143,26 @@ export default function VerifyEmail() {
       {/* Verification Card Stage */}
       <main className="relative z-20 max-w-md mx-auto w-full px-6 py-6 my-auto">
         <Card3D depth={12}>
-          <div className="bg-slate-900/70 backdrop-blur-2xl p-8 sm:p-10 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden">
+          <div className="bg-white p-8 sm:p-10 rounded-3xl border border-slate-200 shadow-2xl relative overflow-hidden">
             
             {/* Top Accent Strip */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-sky-400 to-indigo-500" />
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-sky-500 to-indigo-600" />
 
             {verified ? (
               <div className="text-center py-6 space-y-4">
-                <div className="w-16 h-16 mx-auto rounded-3xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 grid place-items-center shadow-sm">
+                <div className="w-16 h-16 mx-auto rounded-3xl bg-emerald-50 text-emerald-600 border border-emerald-200 grid place-items-center shadow-xs">
                   <CheckCircle2 className="w-9 h-9 animate-bounce" />
                 </div>
-                <h2 className="font-display text-2xl font-bold text-white">
+                <h2 className="font-display text-2xl font-bold text-slate-900">
                   Email Verified!
                 </h2>
-                <p className="text-xs text-slate-400 font-medium">
+                <p className="text-xs text-slate-600 font-medium">
                   Your email is confirmed. Redirecting you to verify your mobile number...
                 </p>
                 <div className="pt-2">
                   <Button
                     onClick={() => nav(`/verify-phone?email=${encodeURIComponent(email)}`)}
-                    className="w-full h-11 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-blue-600/30 cursor-pointer"
+                    className="w-full h-11 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs shadow-lg shadow-blue-600/25 cursor-pointer"
                   >
                     Verify Mobile Number <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
@@ -171,30 +171,30 @@ export default function VerifyEmail() {
             ) : (
               <div>
                 <div className="text-center mb-6">
-                  <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-blue-500/10 text-blue-400 grid place-items-center border border-blue-500/20">
+                  <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-blue-50 text-blue-600 grid place-items-center border border-blue-200">
                     <Mail className="w-7 h-7" />
                   </div>
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-[10px] font-bold text-blue-300 mb-2">
-                    <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-[10px] font-bold text-blue-700 mb-2">
+                    <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
                     <span>Secure Verification</span>
                   </div>
-                  <h2 className="font-display text-2xl font-bold text-white">
+                  <h2 className="font-display text-2xl font-bold text-slate-900">
                     Verify Your Email
                   </h2>
-                  <p className="text-xs text-slate-400 font-medium mt-1">
+                  <p className="text-xs text-slate-500 font-medium mt-1">
                     We've sent a 6-digit verification code to:
                   </p>
-                  <p className="text-xs font-bold font-mono text-blue-400 mt-0.5 break-all">
+                  <p className="text-xs font-bold font-mono text-blue-600 mt-0.5 break-all">
                     {email || "your registered email"}
                   </p>
-                  <p className="text-[11px] text-slate-500 mt-1">
+                  <p className="text-[11px] text-slate-400 mt-1">
                     Please check your inbox & spam folder.
                   </p>
                 </div>
 
                 {err && (
-                  <div className="mb-4 p-3.5 rounded-2xl bg-red-500/10 border border-red-500/20 text-xs text-red-300 font-semibold flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                  <div className="mb-4 p-3.5 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-700 font-semibold flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
                     <span>{err}</span>
                   </div>
                 )}
@@ -202,7 +202,7 @@ export default function VerifyEmail() {
                 <form onSubmit={submit} className="space-y-4">
                   {!emailParam && (
                     <div className="text-left">
-                      <label className="text-[11px] font-bold uppercase tracking-wider text-slate-300 block mb-1">
+                      <label className="text-[11px] font-bold uppercase tracking-wider text-slate-700 block mb-1">
                         Email Address
                       </label>
                       <Input
@@ -211,13 +211,13 @@ export default function VerifyEmail() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="your@email.com"
-                        className="h-11 rounded-xl border border-white/10 bg-slate-950/60 text-white placeholder:text-slate-500"
+                        className="h-11 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:bg-white"
                       />
                     </div>
                   )}
 
                   <div className="text-left">
-                    <label className="text-[11px] font-bold uppercase tracking-wider text-slate-300 block mb-1">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-slate-700 block mb-1">
                       Enter 6-Digit Code from Email
                     </label>
                     <Input
@@ -227,22 +227,22 @@ export default function VerifyEmail() {
                       value={code}
                       onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                       placeholder="• • • • • •"
-                      className="h-14 text-center text-2xl font-bold font-mono tracking-widest rounded-2xl border border-white/10 focus:border-blue-500 text-white bg-slate-950/60"
+                      className="h-14 text-center text-2xl font-bold font-mono tracking-widest rounded-2xl border border-slate-200 focus:border-blue-600 text-slate-900 bg-slate-50"
                     />
                   </div>
 
                   <Button
                     type="submit"
                     disabled={busy || code.length < 6}
-                    className="w-full h-12 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold shadow-lg shadow-blue-600/30 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                    className="w-full h-12 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold shadow-lg shadow-blue-600/25 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                   >
                     {busy ? "Verifying Code..." : "Verify & Activate Account"}
                     <ArrowRight className="w-4 h-4" />
                   </Button>
                 </form>
 
-                <div className="mt-6 pt-5 border-t border-white/10 text-center space-y-2">
-                  <p className="text-xs text-slate-400">
+                <div className="mt-6 pt-5 border-t border-slate-200 text-center space-y-2">
+                  <p className="text-xs text-slate-500">
                     Didn't receive the email in your inbox or spam?
                   </p>
                   <Button
@@ -251,7 +251,7 @@ export default function VerifyEmail() {
                     size="sm"
                     disabled={resending || cooldown > 0}
                     onClick={handleResend}
-                    className="rounded-full border border-white/20 text-xs font-bold text-slate-200 hover:text-white hover:border-blue-500 bg-white/5 cursor-pointer"
+                    className="rounded-full border border-slate-300 text-xs font-bold text-slate-700 hover:text-blue-600 hover:border-blue-600 bg-white cursor-pointer"
                   >
                     <RotateCw className={`w-3.5 h-3.5 mr-1.5 ${resending ? "animate-spin" : ""}`} />
                     {cooldown > 0 ? `Resend Code in ${cooldown}s` : "Resend Verification Code"}
@@ -259,7 +259,7 @@ export default function VerifyEmail() {
                   <div className="pt-2">
                     <Link 
                       to="/register" 
-                      className="text-[11px] text-slate-500 hover:text-blue-400 underline"
+                      className="text-[11px] text-slate-400 hover:text-blue-600 underline"
                     >
                       Entered wrong email? Register again
                     </Link>
@@ -273,8 +273,8 @@ export default function VerifyEmail() {
       </main>
 
       {/* Footer */}
-      <footer className="relative z-20 max-w-7xl mx-auto w-full px-6 py-4 text-center text-xs text-slate-500">
-        Dukaan Retail OS · A Product of PEAN · © 2026
+      <footer className="relative z-20 max-w-7xl mx-auto w-full px-6 py-4 text-center text-xs text-slate-400">
+        Kivo Retail OS · Business Made Simple · © 2026
       </footer>
 
     </div>

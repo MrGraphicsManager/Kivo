@@ -960,25 +960,25 @@ export default function Subscribe() {
   const priceToDisplay = isAnnual ? Math.round(plan.annual / 12) : plan.monthly;
 
   return (
-    <div className="min-h-screen bg-[#090C10] text-slate-100 selection:bg-blue-500/30 selection:text-blue-400 font-sans pb-20 relative overflow-x-hidden">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 selection:bg-blue-600/20 selection:text-blue-700 font-sans pb-20 relative overflow-x-hidden">
       
       {/* Ambient glowing radial blooms */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[450px] bg-gradient-to-b from-blue-600/20 via-indigo-600/10 to-transparent blur-[120px] rounded-full" />
-        <div className="absolute top-[40%] right-[-10%] w-[500px] h-[500px] bg-purple-600/10 blur-[140px] rounded-full" />
-        <div className="absolute bottom-10 left-[-10%] w-[500px] h-[500px] bg-blue-600/10 blur-[140px] rounded-full" />
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[450px] bg-gradient-to-b from-blue-400/10 via-indigo-400/5 to-transparent blur-[120px] rounded-full" />
+        <div className="absolute top-[40%] right-[-10%] w-[500px] h-[500px] bg-sky-400/10 blur-[140px] rounded-full" />
+        <div className="absolute bottom-10 left-[-10%] w-[500px] h-[500px] bg-indigo-400/10 blur-[140px] rounded-full" />
       </div>
       
       {/* =========================================================
           TOP NAVIGATION HEADER
       ========================================================= */}
-      <header className="sticky top-0 z-30 bg-slate-900/70 backdrop-blur-xl border-b border-white/10">
+      <header className="sticky top-0 z-30 bg-white/85 backdrop-blur-xl border-b border-slate-200">
         <div className="mx-auto max-w-7xl px-5 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="flex items-center px-2.5 py-1 rounded-xl bg-white/95 backdrop-blur-md shadow-md border border-white/20 group-hover:scale-105 transition-transform">
-              <img src="/dukaan-logo.png" alt="Dukaan" className="h-6 sm:h-7 w-auto object-contain" />
+            <div className="flex items-center px-1.5 py-0.5 rounded-xl group-hover:scale-105 transition-transform">
+              <img src="/kivo-logo.png" alt="Kivo" className="h-7 sm:h-8 w-auto object-contain" />
             </div>
-            <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono uppercase tracking-widest bg-blue-500/10 text-blue-400 border border-blue-500/20">
+            <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono uppercase tracking-widest bg-blue-50 text-blue-700 border border-blue-200">
               Retail OS
             </span>
           </Link>
@@ -987,7 +987,7 @@ export default function Subscribe() {
             <Button 
               variant="outline" 
               onClick={() => nav("/app")}
-              className="rounded-full border border-white/20 text-white font-bold text-xs hover:border-blue-500 bg-white/5 hover:bg-white/10 backdrop-blur-md flex items-center gap-1.5 cursor-pointer"
+              className="rounded-full border border-slate-300 text-slate-700 font-bold text-xs hover:border-blue-600 hover:text-blue-600 bg-white hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
               <ArrowLeft className="w-3.5 h-3.5" /> Back to App
             </Button>
@@ -1033,15 +1033,15 @@ export default function Subscribe() {
           transition={{ duration: 0.5 }} 
           className="text-center max-w-3xl mx-auto mb-10"
         >
-          <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-xs font-extrabold uppercase tracking-widest mb-3">
-            <Sparkles className="w-3.5 h-3.5" /> Simple, Transparent Pricing
+          <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-xs font-extrabold uppercase tracking-widest mb-3">
+            <Sparkles className="w-3.5 h-3.5 text-blue-600" /> Simple, Transparent Pricing
           </div>
 
-          <h1 className="font-display text-4xl md:text-6xl font-extrabold text-white tracking-tight">
-            Choose the Perfect Plan for Your Dukaan
+          <h1 className="font-display text-4xl md:text-6xl font-extrabold text-slate-900 tracking-tight">
+            Choose the Perfect Plan for Your Store
           </h1>
 
-          <p className="mt-3 text-slate-400 text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
+          <p className="mt-3 text-slate-600 text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
             {isAnnual 
               ? "Annual plans include 20% savings (2 months free). Immediate 1-year activation with zero monthly hassle."
               : "Monthly plans include a risk-free trial with ₹1 Razorpay Autopay setup. Zero lock-in, cancel anytime."
@@ -1049,17 +1049,17 @@ export default function Subscribe() {
           </p>
 
           {/* Billing Cycle Switcher */}
-          <div className="mt-7 inline-flex items-center gap-2 p-1.5 rounded-2xl bg-slate-900/80 border border-white/10 shadow-xl backdrop-blur-md">
+          <div className="mt-7 inline-flex items-center gap-2 p-1.5 rounded-2xl bg-slate-100 border border-slate-200 shadow-sm backdrop-blur-md">
             <button
               onClick={() => setBillingCycle("monthly")}
               className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                 !isAnnual
                   ? "bg-blue-600 text-white shadow-md shadow-blue-500/25"
-                  : "text-slate-400 hover:text-white"
+                  : "text-slate-600 hover:text-slate-900"
               }`}
             >
               <span>Monthly Billing</span>
-              <span className="px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-extrabold">
+              <span className="px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-extrabold">
                 Free Trial Available
               </span>
             </button>
@@ -1068,12 +1068,12 @@ export default function Subscribe() {
               className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                 isAnnual
                   ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/25"
-                  : "text-slate-400 hover:text-white"
+                  : "text-slate-600 hover:text-slate-900"
               }`}
             >
               <BadgePercent className="w-3.5 h-3.5" />
               <span>Annual Billing (Save 20%)</span>
-              <span className="px-1.5 py-0.5 rounded-md bg-white/20 text-[10px] font-extrabold uppercase">
+              <span className="px-1.5 py-0.5 rounded-md bg-white/30 text-[10px] font-extrabold uppercase">
                 Direct Discount
               </span>
             </button>
@@ -1110,10 +1110,10 @@ export default function Subscribe() {
                 whileHover={{ y: -6 }}
                 className={`relative rounded-3xl p-5 md:p-6 border transition-all flex flex-col justify-between ${
                   isSelected
-                    ? "border-blue-500 bg-gradient-to-b from-blue-950/40 via-slate-900/80 to-slate-900/90 shadow-2xl shadow-blue-500/20 ring-2 ring-blue-500/30 cursor-pointer"
+                    ? "border-blue-600 bg-white shadow-2xl shadow-blue-500/15 ring-2 ring-blue-500/30 cursor-pointer"
                     : isFeatured
-                    ? "border-white/20 bg-slate-900/70 hover:border-blue-500/40 shadow-xl cursor-pointer"
-                    : "border-white/10 bg-slate-900/50 hover:border-white/20 shadow-lg cursor-pointer"
+                    ? "border-slate-300 bg-white hover:border-blue-500/50 shadow-md cursor-pointer"
+                    : "border-slate-200/80 bg-white hover:border-slate-300 shadow-xs cursor-pointer"
                 }`}
               >
                 {/* Badges */}
@@ -1155,32 +1155,32 @@ export default function Subscribe() {
 
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs uppercase tracking-widest font-extrabold text-blue-400">
+                    <span className="text-xs uppercase tracking-widest font-extrabold text-blue-600">
                       {value.name} Tier
                     </span>
                     {isSelected && !isDowngrade && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                        <Check className="w-3 h-3 text-emerald-400" /> Selected
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                        <Check className="w-3 h-3 text-emerald-600" /> Selected
                       </span>
                     )}
                   </div>
 
-                  <p className="text-xs text-slate-400 min-h-[30px] font-medium leading-snug">
+                  <p className="text-xs text-slate-500 min-h-[30px] font-medium leading-snug">
                     {value.tagline}
                   </p>
 
                   {/* Price with strikethrough & discount */}
                   <div className="mt-3.5 mb-3">
                     <div className="flex items-baseline gap-1.5 flex-wrap">
-                      <span className="font-display text-4xl font-extrabold text-white">
+                      <span className="font-display text-4xl font-extrabold text-slate-900">
                         ₹{displayPrice}
                       </span>
                       {originalDisplayPrice && originalDisplayPrice > displayPrice && (
-                        <span className="text-sm font-semibold line-through text-slate-500">
+                        <span className="text-sm font-semibold line-through text-slate-400">
                           ₹{originalDisplayPrice}
                         </span>
                       )}
-                      <span className="text-xs font-semibold text-slate-400">
+                      <span className="text-xs font-semibold text-slate-500">
                         / mo
                       </span>
                     </div>
@@ -1188,13 +1188,13 @@ export default function Subscribe() {
                     {/* Discount Badge */}
                     <div className="mt-2">
                       {key === "pro" ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                          <Sparkles className="w-3 h-3 text-purple-400" />
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-purple-50 text-purple-700 border border-purple-200">
+                          <Sparkles className="w-3 h-3 text-purple-600" />
                           {isAnnual ? (value.annual_offer || "12+6 Mo Free · Save 16.5%") : (value.monthly_offer || "1+1 Month Free")}
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                          <BadgePercent className="w-3 h-3 text-emerald-400" /> 20% Discount
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <BadgePercent className="w-3 h-3 text-emerald-600" /> 20% Discount
                         </span>
                       )}
                     </div>
@@ -1202,102 +1202,102 @@ export default function Subscribe() {
 
                   {/* Pricing Subtext & Trial / Annual Badge */}
                   {isAnnual ? (
-                    <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-200 mb-4 text-left">
+                    <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 mb-4 text-left">
                       <div className="font-heading font-extrabold text-xs flex items-center justify-between">
                         <span>Billed ₹{value.annual}/yr</span>
                         {value.original_annual && (
-                          <span className="text-[10px] line-through text-amber-300/50">₹{value.original_annual}</span>
+                          <span className="text-[10px] line-through text-amber-500">₹{value.original_annual}</span>
                         )}
                       </div>
-                      <div className="text-[10px] text-amber-300/80 mt-0.5 font-semibold">
+                      <div className="text-[10px] text-amber-800 mt-0.5 font-semibold">
                         {key === "pro" ? "12+6 Months Free · 18 Mo Total Access" : "Save 20% on 365 Days Access"}
                       </div>
                     </div>
                   ) : (key === "pro" && hasUsedTrial && !hasUsedProTrial) ? (
-                    <div className="p-3 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-200 mb-4 text-left">
+                    <div className="p-3 rounded-2xl bg-purple-50 border border-purple-200 text-purple-900 mb-4 text-left">
                       <div className="font-heading font-extrabold text-xs flex items-center gap-1">
-                        <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                        <Sparkles className="w-3.5 h-3.5 text-purple-600" />
                         <span>14 Days FREE Pro Upgrade</span>
                       </div>
-                      <div className="text-[10px] text-purple-300/80 mt-0.5 font-semibold">
+                      <div className="text-[10px] text-purple-800 mt-0.5 font-semibold">
                         ₹0 Activation · No ₹1 Required for Existing Trial Users
                       </div>
                     </div>
                   ) : hasUsedTrial ? (
-                    <div className="p-3 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-200 mb-4 text-left">
+                    <div className="p-3 rounded-2xl bg-blue-50 border border-blue-200 text-blue-900 mb-4 text-left">
                       <div className="font-heading font-extrabold text-xs flex items-center gap-1">
-                        <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+                        <Sparkles className="w-3.5 h-3.5 text-blue-600" />
                         <span>Paid Plan</span>
                       </div>
-                      <div className="text-[10px] text-blue-300/80 mt-0.5 font-medium">
+                      <div className="text-[10px] text-blue-800 mt-0.5 font-medium">
                         {key === "pro" ? "1+1 Month Free · 60 Days Access" : "Standard monthly renewal."}
                       </div>
                     </div>
                   ) : (
-                    <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-200 mb-4 text-left">
+                    <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 mb-4 text-left">
                       <div className="font-heading font-extrabold text-xs flex items-center gap-1">
-                        <Zap className="w-3.5 h-3.5 text-emerald-400" />
+                        <Zap className="w-3.5 h-3.5 text-emerald-600" />
                         <span>{key === "pro" ? "14 Days FREE Pro Trial" : `${value.trial_days} Days FREE Trial`}</span>
                       </div>
-                      <div className="text-[10px] text-emerald-300/80 mt-0.5 font-medium">
+                      <div className="text-[10px] text-emerald-800 mt-0.5 font-medium">
                         {key === "pro" ? "₹1 Autopay · Renews after 14d (1+1 Mo Free)" : `₹1 Autopay · Renews after ${value.trial_days}d.`}
                       </div>
                     </div>
                   )}
 
-                  <div className="h-px w-full bg-white/10 my-4" />
+                  <div className="h-px w-full bg-slate-100 my-4" />
 
                   {/* Features List */}
                   <div className="space-y-2.5 mb-5">
-                    <div className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400">
+                    <div className="text-[10px] uppercase tracking-wider font-extrabold text-slate-500">
                       Included in {value.name}:
                     </div>
 
                     {value.features.map((f, i) => (
-                      <div key={i} className="flex items-start gap-2 text-xs text-slate-200 font-medium leading-tight">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
+                      <div key={i} className="flex items-start gap-2 text-xs text-slate-700 font-medium leading-tight">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
                         <span>{f}</span>
                       </div>
                     ))}
 
                     {/* Excluded items */}
                     {value.limitations?.map((l, i) => (
-                      <div key={i} className="flex items-start gap-2 text-xs text-slate-500 font-medium">
-                        <X className="w-3.5 h-3.5 text-slate-600 shrink-0 mt-0.5" />
+                      <div key={i} className="flex items-start gap-2 text-xs text-slate-400 font-medium">
+                        <X className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
                         <span>{l}</span>
                       </div>
                     ))}
 
-                    {/* Official Dukaan Premium Identity Showcase */}
+                    {/* Official Kivo Premium Identity Showcase */}
                     {key === "premium" && (
-                      <div className="mt-3 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 shadow-xs">
+                      <div className="mt-3 p-3 rounded-2xl bg-amber-50 border border-amber-200 shadow-xs">
                         <div className="flex items-center justify-between gap-2 mb-1">
-                          <span className="text-[9px] font-mono font-extrabold uppercase tracking-wider text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full">
+                          <span className="text-[9px] font-mono font-extrabold uppercase tracking-wider text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">
                             ★ Premium Identity
                           </span>
                         </div>
-                        <div className="bg-white/95 px-2 py-1 rounded-xl my-1 flex justify-center">
+                        <div className="bg-white px-2 py-1 rounded-xl my-1 flex justify-center border border-slate-100">
                           <img 
-                            src="/logo-premium.png" 
-                            alt="Dukaan Premium Official Logo" 
+                            src="/kivo-logo.png" 
+                            alt="Kivo Premium Official Logo" 
                             className="h-7 w-auto object-contain" 
                           />
                         </div>
-                        <p className="text-[10px] text-amber-200 font-medium text-center mt-1 leading-tight">
+                        <p className="text-[10px] text-amber-800 font-medium text-center mt-1 leading-tight">
                           Includes official golden badge & soundbox.
                         </p>
                       </div>
                     )}
 
-                    {/* Official Dukaan Pro Showcase */}
+                    {/* Official Kivo Pro Showcase */}
                     {key === "pro" && (
-                      <div className="mt-3 p-3 rounded-2xl bg-purple-500/10 border border-purple-500/20 shadow-xs">
+                      <div className="mt-3 p-3 rounded-2xl bg-purple-50 border border-purple-200 shadow-xs">
                         <div className="flex items-center justify-between gap-2 mb-1">
-                          <span className="text-[9px] font-mono font-extrabold uppercase tracking-wider text-purple-300 bg-purple-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
-                            <Sparkles className="w-2.5 h-2.5 text-amber-400" /> Full Customization
+                          <span className="text-[9px] font-mono font-extrabold uppercase tracking-wider text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <Sparkles className="w-2.5 h-2.5 text-amber-500" /> Full Customization
                           </span>
                         </div>
-                        <p className="text-[10px] text-purple-200 font-semibold text-center mt-1 leading-tight">
+                        <p className="text-[10px] text-purple-800 font-semibold text-center mt-1 leading-tight">
                           Custom billing, personalized dashboard & 24/7 dedicated support.
                         </p>
                       </div>
@@ -1305,18 +1305,18 @@ export default function Subscribe() {
 
                     {/* Official NexoraOS Cafe Showcase */}
                     {key === "cafe" && (
-                      <div className="mt-3 p-3 rounded-2xl bg-stone-900 border border-stone-700 shadow-xs">
+                      <div className="mt-3 p-3 rounded-2xl bg-stone-50 border border-stone-200 shadow-xs">
                         <div className="flex items-center justify-between gap-2 mb-1">
-                          <span className="text-[9px] font-mono font-extrabold uppercase tracking-wider text-amber-200 bg-stone-800 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <span className="text-[9px] font-mono font-extrabold uppercase tracking-wider text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
                             ☕ NexoraOS Suite
                           </span>
-                          <span className="text-[9px] font-bold text-slate-400">by PEAN</span>
+                          <span className="text-[9px] font-bold text-slate-500">by PEAN</span>
                         </div>
-                        <div className="mt-1 p-2 rounded-xl bg-purple-500/20 border border-purple-500/30 text-purple-200 text-[10px] font-bold flex items-center gap-1">
-                          <Sparkles className="w-3 h-3 text-purple-400 shrink-0" />
-                          <span>Special: Free 2 Months Dukaan Pro Access!</span>
+                        <div className="mt-1 p-2 rounded-xl bg-purple-50 border border-purple-200 text-purple-700 text-[10px] font-bold flex items-center gap-1">
+                          <Sparkles className="w-3 h-3 text-purple-600 shrink-0" />
+                          <span>Special: Free 2 Months Kivo Pro Access!</span>
                         </div>
-                        <p className="text-[10px] text-slate-400 font-medium text-center mt-1 leading-tight">
+                        <p className="text-[10px] text-slate-500 font-medium text-center mt-1 leading-tight">
                           Dedicated cafe dashboard under active development.
                         </p>
                       </div>
@@ -1325,14 +1325,14 @@ export default function Subscribe() {
                 </div>
 
                 {/* Select Button */}
-                <div className="pt-4 border-t border-white/10">
+                <div className="pt-4 border-t border-slate-100">
                   {isDowngrade ? (
                     <Button
                       onClick={handleCardClick}
                       className={`w-full h-12 rounded-2xl font-bold text-xs shadow-xs active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                         isSelected
                           ? "bg-amber-600 hover:bg-amber-700 text-white shadow-md"
-                          : "bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                          : "bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200"
                       }`}
                     >
                       <span>Downgrade to {value.name}</span>
@@ -1344,7 +1344,7 @@ export default function Subscribe() {
                       className={`w-full h-12 rounded-2xl font-bold text-xs shadow-xs active:scale-95 transition-all cursor-pointer ${
                         renew || isSelected
                           ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md"
-                          : "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                          : "bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200"
                       }`}
                     >
                       {renew ? `Renew ${value.name} Plan` : `Current Plan (${value.name})`}
@@ -1352,7 +1352,7 @@ export default function Subscribe() {
                   ) : isUpgrade ? (
                     <Button
                       onClick={handleCardClick}
-                      className="w-full h-12 rounded-2xl font-bold text-xs bg-blue-600 hover:bg-blue-500 text-white shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="w-full h-12 rounded-2xl font-bold text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <span>Upgrade to {value.name}</span>
                       <ArrowUpRight className="w-4 h-4" />
@@ -1362,8 +1362,8 @@ export default function Subscribe() {
                       onClick={handleCardClick}
                       className={`w-full h-12 rounded-2xl font-bold text-xs shadow-xs active:scale-95 transition-all cursor-pointer ${
                         isSelected
-                          ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md shadow-blue-500/25"
-                          : "bg-white/10 hover:bg-white/15 text-white border border-white/15"
+                          ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md shadow-blue-500/25"
+                          : "bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200"
                       }`}
                     >
                       {isSelected ? (key === "cafe" ? `Pre-Register (${value.name})` : `Selected (${value.name})`) : (key === "cafe" ? `Pre-Register ${value.name}` : `Choose ${value.name}`)}
@@ -1402,21 +1402,21 @@ export default function Subscribe() {
               animate={{ opacity: 1, y: 0 }} 
               exit={{ opacity: 0, y: -18 }} 
               transition={{ duration: 0.4 }} 
-              className="mt-14 max-w-2xl mx-auto rounded-3xl border border-white/10 bg-slate-900/70 backdrop-blur-2xl p-7 md:p-9 shadow-2xl text-center relative overflow-hidden text-white"
+              className="mt-14 max-w-2xl mx-auto rounded-3xl border border-slate-200 bg-white p-7 md:p-9 shadow-2xl text-center relative overflow-hidden text-slate-900"
             >
               {/* Header Icon */}
-              <div className="w-16 h-16 rounded-3xl bg-blue-500/10 border border-blue-500/20 text-blue-400 grid place-items-center mx-auto mb-4 shadow-sm">
-                <ShieldCheck className="w-8 h-8 text-blue-400" />
+              <div className="w-16 h-16 rounded-3xl bg-blue-50 border border-blue-200 text-blue-600 grid place-items-center mx-auto mb-4 shadow-xs">
+                <ShieldCheck className="w-8 h-8 text-blue-600" />
               </div>
 
               <span className={`inline-flex items-center gap-1 px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2 ${
                 isAnnual 
-                  ? "bg-amber-500/20 text-amber-300 border border-amber-500/30" 
+                  ? "bg-amber-50 text-amber-800 border border-amber-200" 
                   : isProFreeUpgradeEligible 
-                  ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
-                  : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                  ? "bg-purple-50 text-purple-700 border border-purple-200"
+                  : "bg-emerald-50 text-emerald-800 border border-emerald-200"
               }`}>
-                {isAnnual ? <BadgePercent className="w-3.5 h-3.5" /> : isProFreeUpgradeEligible ? <Sparkles className="w-3.5 h-3.5 text-purple-400" /> : <Zap className="w-3.5 h-3.5" />}
+                {isAnnual ? <BadgePercent className="w-3.5 h-3.5" /> : isProFreeUpgradeEligible ? <Sparkles className="w-3.5 h-3.5 text-purple-600" /> : <Zap className="w-3.5 h-3.5" />}
                 <span>
                   {isAnnual 
                     ? "Annual Plan · No Trial · Instant 1 Year Access" 
@@ -1428,15 +1428,15 @@ export default function Subscribe() {
                 </span>
               </span>
 
-              <h2 className="font-display text-3xl font-bold text-white">
+              <h2 className="font-display text-3xl font-bold text-slate-900">
                 {plan.name} Plan Checkout
               </h2>
 
-              <p className="mt-2 text-sm text-slate-400 max-w-md mx-auto">
+              <p className="mt-2 text-sm text-slate-500 max-w-md mx-auto">
                 {isAnnual
                   ? `Pay once for 1 full year at ₹${plan.annual} (${selected === "pro" ? "12+6 Months Free · Save 16.5%" : "Save 20%"}). Full access starts immediately.`
                   : isProFreeUpgradeEligible
-                  ? "Claim 14 days of full Dukaan Pro access completely free as an existing merchant upgrade with zero payment required today."
+                  ? "Claim 14 days of full Kivo Pro access completely free as an existing merchant upgrade with zero payment required today."
                   : hasUsedTrial
                   ? `Your trial was previously used. Activate immediate 30-day ${plan.name} access for ₹${plan.monthly}/month.`
                   : `Start your ${selected === "pro" ? 14 : plan.trial_days}-Day Free Trial today with a ₹1 Razorpay Autopay mandate verification.`
@@ -1444,56 +1444,56 @@ export default function Subscribe() {
               </p>
 
               {/* Order Summary Box */}
-              <div className="mt-6 rounded-2xl bg-slate-950/70 p-5 border border-white/10 text-left space-y-3 text-xs text-slate-300">
+              <div className="mt-6 rounded-2xl bg-slate-50 p-5 border border-slate-200 text-left space-y-3 text-xs text-slate-700">
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-400 font-semibold">Selected Plan:</span>
-                  <span className="font-heading font-extrabold text-sm text-white capitalize">
+                  <span className="text-slate-500 font-semibold">Selected Plan:</span>
+                  <span className="font-heading font-extrabold text-sm text-slate-900 capitalize">
                     {plan.name} ({isAnnual ? "Annual" : "Monthly"})
                   </span>
                 </div>
 
                 {selected === "cafe" && (
-                  <div className="p-3 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-200 font-medium text-xs space-y-1">
-                    <div className="flex items-center gap-1.5 font-bold text-purple-300 text-xs">
-                      <Sparkles className="w-4 h-4 text-purple-400 shrink-0" />
-                      <span>🎁 Pre-Order Bonus: 2 Months FREE Dukaan Pro!</span>
+                  <div className="p-3 rounded-xl bg-purple-50 border border-purple-200 text-purple-800 font-medium text-xs space-y-1">
+                    <div className="flex items-center gap-1.5 font-bold text-purple-700 text-xs">
+                      <Sparkles className="w-4 h-4 text-purple-600 shrink-0" />
+                      <span>🎁 Pre-Order Bonus: 2 Months FREE Kivo Pro!</span>
                     </div>
-                    <p className="text-[11px] text-purple-200/80 leading-snug">
-                      The dedicated Cafe Dashboard UI is currently in development. By pre-registering Cafe Plan today, your account receives <strong>2 Months of Full Dukaan Pro Membership for FREE</strong> immediately!
+                    <p className="text-[11px] text-purple-700/80 leading-snug">
+                      The dedicated Cafe Dashboard UI is currently in development. By pre-registering Cafe Plan today, your account receives <strong>2 Months of Full Kivo Pro Membership for FREE</strong> immediately!
                     </p>
                   </div>
                 )}
 
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-400 font-semibold">Free Trial Status:</span>
+                  <span className="text-slate-500 font-semibold">Free Trial Status:</span>
                   {isAnnual ? (
-                    <span className="font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-md border border-amber-500/30">
+                    <span className="font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md border border-amber-200">
                       Annual ({selected === "pro" ? "12+6 Mo Free · 16.5% Off" : "Direct 20% Discount"})
                     </span>
                   ) : isProFreeUpgradeEligible ? (
-                    <span className="font-bold text-purple-300 bg-purple-500/20 px-2.5 py-0.5 rounded-md border border-purple-500/30">
+                    <span className="font-bold text-purple-700 bg-purple-100 px-2.5 py-0.5 rounded-md border border-purple-200">
                       14-Day Free Pro Upgrade (No ₹1 Required)
                     </span>
                   ) : hasUsedTrial ? (
-                    <span className="font-bold text-blue-300 bg-blue-500/20 px-2 py-0.5 rounded-md border border-blue-500/30">
+                    <span className="font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-md border border-blue-200">
                       Paid Plan Upgrade (Trial Already Used)
                     </span>
                   ) : (
-                    <span className="font-bold text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-md border border-emerald-500/30">
+                    <span className="font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-200">
                       {selected === "pro" ? 14 : plan.trial_days} Days Free (via ₹1 Autopay)
                     </span>
                   )}
                 </div>
 
                 {/* Promo Code Box */}
-                <div className="pt-3 border-t border-white/10 space-y-2">
-                  <div className="flex items-center justify-between text-xs font-bold text-slate-200">
+                <div className="pt-3 border-t border-slate-200 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-800">
                     <span className="flex items-center gap-1.5">
-                      <Tag className="w-3.5 h-3.5 text-blue-400" />
+                      <Tag className="w-3.5 h-3.5 text-blue-600" />
                       <span>Have a Promo / Discount Code?</span>
                     </span>
                     {appliedPromo && (
-                      <span className="text-emerald-400 text-[11px] font-mono font-bold">
+                      <span className="text-emerald-700 text-[11px] font-mono font-bold">
                         {appliedPromo.code} Applied
                       </span>
                     )}
@@ -1504,7 +1504,7 @@ export default function Subscribe() {
                       onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
                       placeholder="e.g. DIWALI50, WELCOME20"
                       disabled={!!appliedPromo}
-                      className="h-10 text-xs font-mono uppercase font-bold rounded-xl bg-slate-900 border-white/10 text-white placeholder:text-slate-500"
+                      className="h-10 text-xs font-mono uppercase font-bold rounded-xl bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
                     />
                     {appliedPromo ? (
                       <Button
@@ -1512,7 +1512,7 @@ export default function Subscribe() {
                         variant="outline"
                         size="sm"
                         onClick={() => { setAppliedPromo(null); setPromoInput(""); }}
-                        className="h-10 px-3 text-xs font-bold rounded-xl border-red-500/30 text-red-400 bg-red-500/10 hover:bg-red-500/20 cursor-pointer"
+                        className="h-10 px-3 text-xs font-bold rounded-xl border-red-200 text-red-600 bg-red-50 hover:bg-red-100 cursor-pointer"
                       >
                         Remove
                       </Button>
@@ -1522,7 +1522,7 @@ export default function Subscribe() {
                         size="sm"
                         disabled={validatingPromo}
                         onClick={handleValidatePromo}
-                        className="h-10 px-4 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-500 text-white shrink-0 shadow-xs cursor-pointer"
+                        className="h-10 px-4 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-700 text-white shrink-0 shadow-xs cursor-pointer"
                       >
                         {validatingPromo ? "Checking..." : "Apply Code"}
                       </Button>
@@ -1530,22 +1530,22 @@ export default function Subscribe() {
                   </div>
 
                   {appliedPromo && (
-                    <div className="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[11px] font-bold flex items-center justify-between">
+                    <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold flex items-center justify-between">
                       <span>🎉 Code {appliedPromo.code} applied!</span>
                       <span>-₹{appliedPromo.discount_amount} Instant Off</span>
                     </div>
                   )}
                 </div>
 
-                <div className="flex justify-between items-center pt-3 border-t border-white/10">
-                  <span className="text-slate-400 font-semibold">Due Today:</span>
+                <div className="flex justify-between items-center pt-3 border-t border-slate-200">
+                  <span className="text-slate-500 font-semibold">Due Today:</span>
                   <div className="text-right">
                     {appliedPromo && (
-                      <div className="text-xs text-slate-500 line-through">
+                      <div className="text-xs text-slate-400 line-through">
                         {isAnnual ? `₹${plan.annual}.00` : isProFreeUpgradeEligible ? `₹${plan.monthly}.00` : hasUsedTrial ? `₹${plan.monthly}.00` : "₹1.00"}
                       </div>
                     )}
-                    <span className="font-display font-extrabold text-2xl text-emerald-400">
+                    <span className="font-display font-extrabold text-2xl text-emerald-600">
                       {isAnnual
                         ? `₹${Math.max(0, plan.annual - (appliedPromo?.discount_amount || 0))}.00`
                         : isProFreeUpgradeEligible
@@ -1558,12 +1558,12 @@ export default function Subscribe() {
                   </div>
                 </div>
 
-                <div className="text-[11px] text-slate-400 pt-1 leading-relaxed">
+                <div className="text-[11px] text-slate-500 pt-1 leading-relaxed">
                   {isAnnual ? (
                     <span>{selected === "pro" ? "Covers 12+6 = 18 months total Pro access. Renews annually. Cancel anytime from Billing." : "Covers full 12 months. Renews annually. Cancel anytime from Billing."}</span>
                   ) : isProFreeUpgradeEligible ? (
                     <span>
-                      <b>100% Free 14-day Dukaan Pro Upgrade</b> for existing merchants. Zero charge today (no ₹1 required). After 14 days, renews at ₹499/month with 1+1 month free.
+                      <b>100% Free 14-day Kivo Pro Upgrade</b> for existing merchants. Zero charge today (no ₹1 required). After 14 days, renews at ₹499/month with 1+1 month free.
                     </span>
                   ) : hasUsedTrial ? (
                     <span>
