@@ -213,7 +213,7 @@ export default function POS() {
   // Shift Handover Modal State (F9)
   const [shiftHandoverOpen, setShiftHandoverOpen] = useState(false);
   const [countedCashInput, setCountedCashInput] = useState("");
-  const [shiftOrders, setShiftOrders] = useState([]);
+  const [shiftStatsServer, setShiftStatsServer] = useState(null);
 
   const activeCashierName = isCashierModeActive() 
     ? getActiveCashierName(currentShopId) 
@@ -340,7 +340,7 @@ export default function POS() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cart, customerId, discount, discountType, heldCart, currentShopId, activeCartSlot, cartSlots]);
 
-  // Shift Handover Computation (F9)
+  // Shift Handover Summary (F9) — aggregated server-side from authoritative orders.
   const currentShift = getCurrentShift() || {
     cashier_name: activeCashierName,
     started_at: new Date().toISOString(),
@@ -348,59 +348,32 @@ export default function POS() {
   };
 
   useEffect(() => {
-    if (!shiftHandoverOpen) return;
+    if (!shiftHandoverOpen || !currentShift?.started_at) return;
     let cancelled = false;
-    api.get("/orders?limit=1000")
+    api.get("/orders/shift-summary", { params: { started_at: currentShift.started_at } })
       .then(res => {
-        if (cancelled) return;
-        const orders = Array.isArray(res?.data) ? res.data : [];
-        const startTime = currentShift?.started_at ? new Date(currentShift.started_at).getTime() : 0;
-        setShiftOrders(orders.filter(o => {
-          const orderTime = o.created_at ? new Date(o.created_at).getTime() : 0;
-          return orderTime >= startTime;
-        }));
+        if (!cancelled) setShiftStatsServer(res?.data || null);
       })
       .catch(() => {
-        if (!cancelled) setShiftOrders([]);
+        if (!cancelled) setShiftStatsServer(null);
       });
     return () => { cancelled = true; };
   }, [shiftHandoverOpen, currentShift?.started_at]);
 
   const shiftStats = useMemo(() => {
-    let cashSales = 0;
-    let upiSales = 0;
-    let cardSales = 0;
-    let udhaarSales = 0;
-
-    shiftOrders.forEach(o => {
-      const amt = Number(o.total || 0);
-      const m = (o.payment_method || "cash").toLowerCase();
-      if (m === "cash") cashSales += amt;
-      else if (m === "upi" || m === "qr") upiSales += amt;
-      else if (m === "card") cardSales += amt;
-      else if (m === "udhaar") udhaarSales += amt;
-      else cashSales += amt;
-    });
-
-    const totalSales = cashSales + upiSales + cardSales + udhaarSales;
+    const cashSales = Number(shiftStatsServer?.cash_sales || 0);
+    const upiSales = Number(shiftStatsServer?.upi_sales || 0);
+    const cardSales = Number(shiftStatsServer?.card_sales || 0);
+    const udhaarSales = Number(shiftStatsServer?.udhaar_sales || 0);
+    const totalSales = Number(shiftStatsServer?.total_sales || 0);
+    const totalBills = Number(shiftStatsServer?.total_bills || 0);
     const openingCash = Number(currentShift?.opening_cash || 0);
     const expectedCash = openingCash + cashSales;
     const countedCash = countedCashInput === "" ? expectedCash : Number(countedCashInput) || 0;
     const variance = countedCash - expectedCash;
 
-    return {
-      cashSales,
-      upiSales,
-      cardSales,
-      udhaarSales,
-      totalSales,
-      totalBills: shiftOrders.length,
-      openingCash,
-      expectedCash,
-      countedCash,
-      variance
-    };
-  }, [shiftOrders, currentShift?.opening_cash, countedCashInput]);
+    return { cashSales, upiSales, cardSales, udhaarSales, totalSales, totalBills, openingCash, expectedCash, countedCash, variance };
+  }, [shiftStatsServer, currentShift?.opening_cash, countedCashInput]);
 
   const handlePrintHandoverSlip = () => {
     const shopName = shop?.name || activeShop?.name || "Apni Dukaan";
