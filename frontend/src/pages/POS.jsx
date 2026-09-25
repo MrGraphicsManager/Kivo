@@ -59,7 +59,6 @@ import { useTheme } from "@/contexts/ThemeContext";
 import VoiceBillingModal from "@/components/pos/VoiceBillingModal";
 import CustomerDisplayModal from "@/components/pos/CustomerDisplayModal";
 import SplitPaymentModal from "@/components/pos/SplitPaymentModal";
-import { getStoredProducts, saveStoredProducts } from "@/lib/defaultProducts";
 import { useAuth } from "@/lib/AuthContext";
 import { getProThemeSettings } from "@/lib/proCustomizations";
 import { 
