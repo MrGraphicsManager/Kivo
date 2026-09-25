@@ -1336,10 +1336,102 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // 2A. SOCIAL LOGIN (Google / Apple)
-    // Disabled until provider-side OAuth/OIDC token verification is implemented.
+    // 2A. SOCIAL LOGIN (Google)
+    // Only accept provider-issued ID tokens. Client-supplied email/name is never
+    // treated as proof of identity.
     if ((path === "/auth/social-login" || path === "/auth/google") && event.httpMethod === "POST") {
-      return { statusCode: 501, headers, body: JSON.stringify({ detail: "Social login is temporarily unavailable until provider token verification is enabled." }) };
+      const provider = String(body.provider || "google").toLowerCase();
+      if (provider !== "google") {
+        return { statusCode: 501, headers, body: JSON.stringify({ detail: "This social provider is not configured for verified sign-in." }) };
+      }
+
+      const idToken = String(body.id_token || body.credential || "").trim();
+      const googleClientId = String(process.env.GOOGLE_CLIENT_ID || "").trim();
+      if (!idToken || !googleClientId) {
+        return { statusCode: 503, headers, body: JSON.stringify({ detail: "Google sign-in is not configured." }) };
+      }
+
+      const tokenInfo = await safeHttpGet(
+        "https://oauth2.googleapis.com/tokeninfo?id_token=" + encodeURIComponent(idToken),
+        5000
+      );
+      if (!tokenInfo.ok) {
+        return { statusCode: 401, headers, body: JSON.stringify({ detail: "Invalid Google identity token." }) };
+      }
+
+      let googleUser;
+      try {
+        googleUser = JSON.parse(await tokenInfo.text());
+      } catch (_) {
+        return { statusCode: 401, headers, body: JSON.stringify({ detail: "Invalid Google identity response." }) };
+      }
+
+      if (googleUser.aud !== googleClientId ||
+          googleUser.iss !== "https://accounts.google.com" ||
+          googleUser.email_verified !== "true") {
+        return { statusCode: 401, headers, body: JSON.stringify({ detail: "Google identity verification failed." }) };
+      }
+
+      const email = String(googleUser.email || "").trim().toLowerCase();
+      if (!email) {
+        return { statusCode: 400, headers, body: JSON.stringify({ detail: "Google account email is unavailable." }) };
+      }
+
+      await getPersistentState();
+      const name = String(googleUser.name || body.name || email.split("@")[0]).trim();
+      const avatar = String(googleUser.picture || "").trim();
+      let existing = registeredUsersList.find(u => u.email && u.email.toLowerCase() === email);
+
+      if (!existing) {
+        existing = {
+          id: "usr_" + Date.now(),
+          name,
+          email,
+          phone: "",
+          phone_verified: false,
+          email_verified: true,
+          is_verified: true,
+          role: "owner",
+          store_name: name + "'s Store",
+          password_hash: "",
+          subscription: null,
+          auth_provider: "google",
+          avatar
+        };
+        registeredUsersList.push(existing);
+        await savePersistentState();
+      } else {
+        existing.email_verified = true;
+        existing.is_verified = true;
+        existing.auth_provider = "google";
+        if (avatar) existing.avatar = avatar;
+        if (!existing.name) existing.name = name;
+        await savePersistentState();
+      }
+
+      const user = {
+        id: existing.id,
+        name: existing.name || name,
+        email,
+        phone: existing.phone || "",
+        phone_verified: Boolean(existing.phone_verified),
+        email_verified: true,
+        is_verified: true,
+        role: existing.role || "owner",
+        auth_provider: "google",
+        avatar: existing.avatar || avatar,
+        is_admin: email === ADMIN_EMAIL.toLowerCase(),
+        subscription: existing.subscription || globalPlatformConfig.granted_subscriptions?.[email] || null,
+        is_premium: ["premium", "pro"].includes(existing.subscription?.plan || ""),
+        is_pro: existing.subscription?.plan === "pro"
+      };
+
+      const token = makeToken(user);
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ ok: true, access_token: token, token_type: "bearer", user })
+      };
     }
 
     // 2B. RESET PASSWORD
