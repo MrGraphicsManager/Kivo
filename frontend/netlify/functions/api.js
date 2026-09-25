@@ -1,4 +1,5 @@
 const tls = require("tls");
+const crypto = require("crypto");
 const https = require("https");
 const http = require("http");
 
@@ -959,8 +960,15 @@ async function sendMailWithFallback({ to, subject, html }) {
   throw lastErr || new Error("Failed to dispatch email across candidate SMTP hosts");
 }
 
+const SERVERLESS_TOKEN_SECRET = (process.env.SERVERLESS_TOKEN_SECRET || "").trim();
+if (!SERVERLESS_TOKEN_SECRET) {
+  throw new Error("SERVERLESS_TOKEN_SECRET must be configured; refusing to start with unsigned auth tokens.");
+}
+
 function makeToken(userData) {
-  return "duk_" + Buffer.from(JSON.stringify(userData)).toString("base64url");
+  const payload = Buffer.from(JSON.stringify({ ...userData, iat: Date.now(), exp: Date.now() + 7 * 86400000 }), "utf8").toString("base64url");
+  const signature = crypto.createHmac("sha256", SERVERLESS_TOKEN_SECRET).update(payload).digest("base64url");
+  return "duk_" + payload + "." + signature;
 }
 
 function parseToken(authHeader) {
@@ -968,21 +976,17 @@ function parseToken(authHeader) {
   const raw = authHeader.replace(/^Bearer\s+/i, "").trim();
   if (!raw) return null;
   const tokenStr = raw.startsWith("duk_") ? raw.slice(4) : raw;
-  if (tokenStr.includes(".")) {
-    const parts = tokenStr.split(".");
-    if (parts.length >= 2) {
-      try {
-        const payloadJson = Buffer.from(parts[1], "base64url").toString("utf-8");
-        const payload = JSON.parse(payloadJson);
-        if (payload && typeof payload === "object") return payload;
-      } catch (_) {}
-    }
-  }
+  const parts = tokenStr.split(".");
+  if (parts.length !== 2) return null;
   try {
-    const json = Buffer.from(tokenStr, "base64url").toString("utf-8");
-    const parsed = JSON.parse(json);
-    return parsed && typeof parsed === "object" ? parsed : null;
-  } catch (e) {
+    const expected = crypto.createHmac("sha256", SERVERLESS_TOKEN_SECRET).update(parts[0]).digest("base64url");
+    const a = Buffer.from(parts[1]);
+    const b = Buffer.from(expected);
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+    const payload = JSON.parse(Buffer.from(parts[0], "base64url").toString("utf8"));
+    if (!payload || typeof payload !== "object" || !payload.exp || payload.exp <= Date.now()) return null;
+    return payload;
+  } catch (_) {
     return null;
   }
 }
@@ -1310,82 +1314,9 @@ exports.handler = async (event, context) => {
     }
 
     // 2A. SOCIAL LOGIN (Google / Apple)
+    // Disabled until provider-side OAuth/OIDC token verification is implemented.
     if ((path === "/auth/social-login" || path === "/auth/google") && event.httpMethod === "POST") {
-      await getPersistentState();
-      let email = (body.email || "").trim().toLowerCase();
-      let name = (body.name || "").trim();
-      let avatar = body.avatar || "";
-      const provider = body.provider || "google";
-
-      if (!email && body.credential) {
-        try {
-          const payloadBase64 = body.credential.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-          const jsonStr = Buffer.from(payloadBase64, 'base64').toString('utf8');
-          const googlePayload = JSON.parse(jsonStr);
-          if (googlePayload.email) email = googlePayload.email.trim().toLowerCase();
-          if (googlePayload.name) name = googlePayload.name.trim();
-          if (googlePayload.picture) avatar = googlePayload.picture;
-        } catch (_) {}
-      }
-
-      if (!name) name = email.split("@")[0] || "Merchant";
-
-      if (!email) {
-        return { statusCode: 400, headers, body: JSON.stringify({ detail: "Email is required for social login." }) };
-      }
-
-      const isAdmin = email === ADMIN_EMAIL.toLowerCase();
-      let granted = globalPlatformConfig.granted_subscriptions?.[email];
-      if (!granted && globalPlatformConfig.granted_subscriptions) {
-        const foundKey = Object.keys(globalPlatformConfig.granted_subscriptions).find(k => k.toLowerCase() === email);
-        if (foundKey) granted = globalPlatformConfig.granted_subscriptions[foundKey];
-      }
-
-      const isFrozen = !!globalPlatformConfig.frozen_merchants?.[email];
-      const isVerified = globalPlatformConfig.verified_merchants?.[email] !== undefined 
-        ? globalPlatformConfig.verified_merchants[email] 
-        : true;
-
-      let existing = registeredUsersList.find(u => u.email && u.email.toLowerCase() === email);
-      const sub = granted || existing?.subscription || { plan: "starter", status: "active" };
-
-      const user = {
-        id: existing?.id || `usr_${Date.now()}`,
-        name: existing?.name || name,
-        email,
-        avatar: existing?.avatar || avatar,
-        auth_provider: provider,
-        is_admin: isAdmin,
-        is_verified: isVerified,
-        is_frozen: isFrozen,
-        subscription: sub,
-        role: existing?.role || (isAdmin ? "admin" : "owner"),
-        store_name: body.cafe_name || existing?.store_name || `${existing?.name || name}'s Store`,
-        is_premium: (granted || existing?.subscription)?.plan === "premium" || (granted || existing?.subscription)?.plan === "pro",
-        is_pro: (granted || existing?.subscription)?.plan === "pro"
-      };
-
-      recordRegisteredUser(user);
-      await savePersistentState();
-
-      const token = makeToken(user);
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          ok: true,
-          access_token: token,
-          token: token,
-          token_type: "bearer",
-          user,
-          cafe: {
-            id: user.cafe_id || user.id || "cafe_main",
-            name: body.cafe_name || user.store_name || `${user.name}'s Café`,
-            tax_rate: 5,
-            upi_enabled: true
-          }
-        })
-      };
+      return { statusCode: 501, headers, body: JSON.stringify({ detail: "Social login is temporarily unavailable until provider token verification is enabled." }) };
     }
 
     // 2B. RESET PASSWORD
@@ -1583,8 +1514,6 @@ exports.handler = async (event, context) => {
         headers,
         body: JSON.stringify({
           ok: true,
-          verification_code,
-          verification_token,
           message: "A new verification code has been dispatched to your email."
         })
       };
