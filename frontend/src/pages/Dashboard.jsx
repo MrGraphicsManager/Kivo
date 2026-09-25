@@ -21,14 +21,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-const FALLBACK_BILLS = [
-  { id: "bill-1023", billNo: "1023", customer: "Walk-in Customer", items: 3, amount: 450, date: "12 Sep, 12:32 PM", paymentMethod: "Cash" },
-  { id: "bill-1022", billNo: "1022", customer: "Ramesh Patel", items: 5, amount: 1280, date: "12 Sep, 11:15 AM", paymentMethod: "UPI" },
-  { id: "bill-1021", billNo: "1021", customer: "Walk-in Customer", items: 1, amount: 120, date: "12 Sep, 10:48 AM", paymentMethod: "Cash" },
-  { id: "bill-1020", billNo: "1020", customer: "Amit Sharma", items: 4, amount: 980, date: "12 Sep, 09:21 AM", paymentMethod: "UPI" },
-  { id: "bill-1019", billNo: "1019", customer: "Neha Verma", items: 2, amount: 320, date: "12 Sep, 09:05 AM", paymentMethod: "Cash" },
-];
-
 export default function Dashboard() {
   const nav = useNavigate();
   const { user, currentShopId, shops } = useAuth();
