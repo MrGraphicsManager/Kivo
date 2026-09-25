@@ -1175,7 +1175,15 @@ exports.handler = async (event, context) => {
           need_verification: true,
           email,
           message: "Account created! A verification code has been sent to your email.",
-          user: newRegUser
+          user: {
+            id: newRegUser.id,
+            name: newRegUser.name,
+            email: newRegUser.email,
+            is_verified: false,
+            email_verified: false,
+            phone_verified: false,
+            subscription: null
+          }
         })
       };
     }
