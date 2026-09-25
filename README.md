@@ -1,8 +1,8 @@
-# 🛍️ Dukaan — Cloud Retail Operating System & Smart POS
+# 🛍️ Kivo — Cloud Retail Operating System & Smart POS
 
 <div align="center">
 
-![Dukaan Banner](https://img.shields.io/badge/Dukaan-Retail%20OS%20v2.0-blue?style=for-the-badge&logo=react)
+![Kivo Banner](https://img.shields.io/badge/Kivo-Retail%20OS%20v2.0-blue?style=for-the-badge&logo=react)
 ![PEAN Studio](https://img.shields.io/badge/Studio-PEAN%20Ecosystem-purple?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Production-Ready-emerald?style=for-the-badge)
 
@@ -16,7 +16,7 @@
 
 ## 🚀 Overview
 
-**Dukaan** is an end-to-end retail operating system engineered to eliminate checkout queues and digitize small business counter operations. Developed from the ground up to solve the real bottlenecks faced by physical stores, Dukaan brings sub-second keyboard checkout, native thermal hardware spooling, real-time multi-device sync, and automated customer credit recovery via WhatsApp.
+**Kivo** is an end-to-end retail operating system engineered to eliminate checkout queues and digitize small business counter operations. Developed from the ground up to solve the real bottlenecks faced by physical stores, Kivo brings sub-second keyboard checkout, native thermal hardware spooling, real-time multi-device sync, and automated customer credit recovery via WhatsApp.
 
 A flagship venture engineered under the **PEAN** technology studio.
 
@@ -24,7 +24,7 @@ A flagship venture engineered under the **PEAN** technology studio.
 
 ## ⚡ Key Engineering Highlights
 
-### 1. ⏱️ 0.8-Second Checkout Engine
+### 1. ⏱️ Fast POS Checkout
 - **F1–F6 Keyboard Shortcuts:** Cashiers can search products, modify quantities, select payment modes, and dispatch bills without touching a mouse.
 - **Sub-Second Latency:** Client-side optimistic cart operations and fast indexed item lookups guarantee zero lag at high-volume counters.
 
@@ -56,9 +56,9 @@ A flagship venture engineered under the **PEAN** technology studio.
 
 | Domain | Technologies |
 | :--- | :--- |
-| **Frontend** | React 18, Vite, Tailwind CSS, Lucide React, Framer Motion |
-| **Backend / API** | Node.js, Express.js, RESTful APIs, Server-Sent Events (SSE) |
-| **Database & Cache** | SQLite / PostgreSQL, LocalStorage Offline Fallback Sync |
+| **Frontend** | React 19, Create React App (CRACO), Tailwind CSS, Lucide React, Framer Motion |
+| **Backend / API** | FastAPI + Netlify/Vercel serverless API routes, REST APIs |
+| **Database & Cache** | MongoDB (FastAPI backend) + serverless sync/persistence |
 | **Hardware / Protocol** | ESC/POS Thermal Printing, Webhooks, WhatsApp API |
 | **Tooling & Build** | Craco, PostCSS, ESLint, Git & GitHub |
 
@@ -70,8 +70,8 @@ A flagship venture engineered under the **PEAN** technology studio.
 [ Barcode Scanner / F1-F6 Counter ]
                │
                ▼
-   [ Dukaan POS Client (React 18) ]
-   ├── Client-side Cart & Tax Calculation (0.8s)
+   [ Kivo POS Client (React 18) ]
+   ├── Client-side Cart & Tax Calculation (client-side optimistic updates)
    ├── Local-first Cache & Offline Storage
    └── Responsive View Engine (Mobile Drawer / Desktop Grid)
          │                   │                    │
@@ -92,18 +92,18 @@ A flagship venture engineered under the **PEAN** technology studio.
 ### Installation
 ```bash
 # Clone repository
-git clone https://github.com/MrGraphicsManager/Dukaan.git
-cd Dukaan
+git clone https://github.com/MrGraphicsManager/Kivo.git
+cd Kivo
 
 # Install frontend dependencies
 cd frontend
 npm install
 
 # Start local development server
-npm run dev
+npm start
 ```
 
-Visit `http://localhost:5173` to launch Dukaan.
+Visit `http://localhost:3000` to launch Kivo.
 
 ---
 
