@@ -1,13 +1,7 @@
 name: Apply Free Trial Backend Patch
 
 on:
-  push:
-    paths:
-      - scripts/apply_free_trial.py
   workflow_dispatch:
-
-permissions:
-  contents: write
 
 jobs:
   patch:
