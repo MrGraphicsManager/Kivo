@@ -52,7 +52,7 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  }, [getSafeOrders]);
+  }, []);
 
   useEffect(() => {
     loadDashboard();
