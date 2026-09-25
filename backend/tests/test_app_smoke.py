@@ -14,4 +14,4 @@ from server import app
 
 def test_app_imports_and_health_route_exists():
     routes = {route.path for route in app.routes}
-    assert "/api/health" in routes
+    assert "/health" in routes
