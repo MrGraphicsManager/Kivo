@@ -595,17 +595,17 @@ export default function Billing() {
                 <div>
                   {plan.id === "pro" && (
                     <div className="mb-2 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800 shadow-xs inline-flex items-center">
-                      <img src="/kivo-pro.png" alt="Kivo Pro" className="h-5 sm:h-6 w-auto object-contain" />
+                      <img src="/kivo-pro.png" alt="Kivo Pro" className="h-5 sm:h-6 w-auto object-contain" style={{ maxHeight: "24px", maxWidth: "140px" }} />
                     </div>
                   )}
                   {plan.id === "premium" && (
                     <div className="mb-2 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800 shadow-xs inline-flex items-center">
-                      <img src="/kivo-premium.png" alt="Kivo Premium" className="h-5 sm:h-6 w-auto object-contain" />
+                      <img src="/kivo-premium.png" alt="Kivo Premium" className="h-5 sm:h-6 w-auto object-contain" style={{ maxHeight: "24px", maxWidth: "140px" }} />
                     </div>
                   )}
                   {plan.id === "cafe" && (
                     <div className="mb-2 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800 shadow-xs inline-flex items-center">
-                      <img src="/kivo-cafe.png" alt="Kivo Cafe Plan" className="h-5 sm:h-6 w-auto object-contain" />
+                      <img src="/kivo-cafe.png" alt="Kivo Cafe Plan" className="h-5 sm:h-6 w-auto object-contain" style={{ maxHeight: "24px", maxWidth: "140px" }} />
                     </div>
                   )}
                   <div className="flex items-center justify-between mb-4">
