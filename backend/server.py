@@ -1623,6 +1623,38 @@ async def delete_product(pid: str, shop: dict = Depends(get_shop)):
     await db.products.delete_one({"_id": product["_id"], "shop_id": shop["id"]})
     return {"ok": True, "id": pid}
 
+@api.get("/products/velocity")
+async def product_velocity(days: int = 30, shop: dict = Depends(get_shop)):
+    days = max(1, min(int(days), 365))
+    since = datetime.now(timezone.utc) - timedelta(days=days)
+    since_iso = since.isoformat()
+
+    pipeline = [
+        {"$match": {"shop_id": shop["id"], "created_at": {"$gte": since_iso}}},
+        {"$unwind": "$items"},
+        {"$group": {"_id": "$items.product_id", "sold_count": {"$sum": "$items.qty"}}},
+    ]
+    sold_by_product = {}
+    async for row in db.orders.aggregate(pipeline):
+        sold_by_product[str(row["_id"])] = int(row.get("sold_count", 0) or 0)
+
+    products = []
+    async for product in db.products.find({"shop_id": shop["id"]}):
+        pid = str(product["_id"])
+        sold_count = sold_by_product.get(pid, 0)
+        daily_burn = sold_count / days
+        stock = int(product.get("stock", 0) or 0)
+        unlimited = bool(product.get("unlimited_stock"))
+        days_left = None if unlimited or daily_burn <= 0 else round(stock / daily_burn, 1)
+        products.append({
+            "product_id": pid,
+            "sold_count": sold_count,
+            "daily_burn": round(daily_burn, 3),
+            "days_left": days_left,
+        })
+    return {"days": days, "since": since_iso, "products": products}
+
+
 @api.post("/products/{pid}/stock")
 async def adjust_stock(pid: str, body: StockAdjustIn, shop: dict = Depends(get_shop)):
     if not ObjectId.is_valid(pid):
