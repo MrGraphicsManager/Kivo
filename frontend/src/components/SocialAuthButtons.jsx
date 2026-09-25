@@ -49,11 +49,7 @@ export default function SocialAuthButtons({ mode = "login", onSuccess }) {
   };
 
   const handleAppleClick = () => {
-    setBusyProvider("apple");
-    setAppleEmail("");
-    setAppleName("");
-    setShowApplePrompt(true);
-    setBusyProvider(null);
+    toast.info("Apple sign-in is temporarily unavailable until secure Apple OAuth is configured.");
   };
 
   const submitAppleAuth = async (e) => {
