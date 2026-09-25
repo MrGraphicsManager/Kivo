@@ -245,11 +245,8 @@ export function AuthProvider({ children }) {
       try {
         localStorage.setItem("dukaan_user", JSON.stringify(next));
         
-        // Also update token so serverless functions see latest state
-        try {
-          const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(next))));
-          localStorage.setItem("dukaan_access_token", "duk_" + b64);
-        } catch {}
+        // Do not mint or overwrite authentication tokens from client-side user state.
+        // Access tokens are issued by the backend after successful authentication.
 
         // Persist to registered users directory & all subscriptions map
         if (next.email) {
