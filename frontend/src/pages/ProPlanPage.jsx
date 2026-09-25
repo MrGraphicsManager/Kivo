@@ -52,7 +52,7 @@ export default function ProPlanPage() {
           
           <div className="flex items-center gap-4">
             <Link to="/" className="flex items-center gap-2 group">
-              <img src="/logo.png" alt="Dukaan" className="h-9 sm:h-10 w-auto object-contain transition-transform group-hover:scale-105" />
+              <img src="/kivo-logo.png" alt="Kivo" className="h-9 sm:h-10 w-auto object-contain transition-transform group-hover:scale-105" />
               <div className="hidden sm:flex flex-col border-l border-slate-200 pl-2.5">
                 <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 font-mono leading-none">by</span>
                 <span className="text-xs font-black tracking-tight text-slate-900 leading-tight">PEAN</span>
@@ -61,7 +61,7 @@ export default function ProPlanPage() {
 
             <span className="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold">
               <Crown className="w-3.5 h-3.5 text-blue-600" />
-              <span>Dukaan Pro Plan</span>
+              <span>Kivo Pro Plan</span>
             </span>
           </div>
 
@@ -97,17 +97,24 @@ export default function ProPlanPage() {
 
         <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center relative z-10">
           
+          {/* Official Kivo Pro Brand Logo */}
+          <div className="mb-4 inline-flex items-center gap-2 bg-slate-950 px-4 py-2 rounded-2xl border border-slate-800 shadow-md">
+            <img src="/kivo-pro.png" alt="Kivo Pro" className="h-8 sm:h-10 w-auto object-contain" />
+          </div>
+
           {/* Eyebrow badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-black uppercase tracking-widest mb-6 shadow-2xs">
-            <Crown className="w-4 h-4 text-blue-600" />
-            <span>The Enterprise Tier for High-Volume Stores</span>
+          <div className="block">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-black uppercase tracking-widest mb-6 shadow-2xs">
+              <Crown className="w-4 h-4 text-blue-600" />
+              <span>The Enterprise Tier for High-Volume Stores</span>
+            </div>
           </div>
 
           {/* Headline */}
           <h1 className="font-sans font-black text-4xl sm:text-6xl lg:text-7xl tracking-[-0.03em] leading-[1.05] text-slate-950 max-w-4xl mx-auto">
             Scale Your Store with <br className="hidden sm:inline" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800">
-              Dukaan Pro Plan.
+              Kivo Pro Plan.
             </span>
           </h1>
 
@@ -755,14 +762,14 @@ export default function ProPlanPage() {
       ========================================================= */}
       <footer className="border-t border-slate-200 bg-white py-10 text-center text-xs text-slate-500">
         <div className="flex items-center justify-center gap-3 mb-3">
-          <img src="/logo.png" alt="Dukaan" className="h-8 object-contain" />
+          <img src="/kivo-logo.png" alt="Kivo" className="h-8 object-contain" />
           <div className="h-5 w-px bg-slate-200" />
-          <span className="font-bold text-slate-800 text-sm">Dukaan Pro Plan</span>
+          <span className="font-bold text-slate-800 text-sm">Kivo Pro Plan</span>
         </div>
-        <p className="mb-4">Run Your Dukaan. Smarter. A Product by PEAN.</p>
+        <p className="mb-4">Business Made Simple. A Product by PEAN.</p>
         <div className="flex justify-center gap-6 text-slate-600 font-medium">
           <Link to="/" className="hover:text-blue-600">Home</Link>
-          <Link to="/pro-studio" className="hover:text-blue-600">Dukaan Pro Studio</Link>
+          <Link to="/pro-studio" className="hover:text-blue-600">Kivo Pro Studio</Link>
           <Link to="/subscribe" className="hover:text-blue-600">Pricing</Link>
           <Link to="/careers" className="hover:text-blue-600">Careers</Link>
           <Link to="/privacy-policy" className="hover:text-blue-600">Privacy Policy</Link>

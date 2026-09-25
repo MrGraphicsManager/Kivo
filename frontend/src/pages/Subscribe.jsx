@@ -1154,6 +1154,21 @@ export default function Subscribe() {
                 )}
 
                 <div>
+                  {key === "pro" && (
+                    <div className="mb-2 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800 shadow-xs inline-flex items-center">
+                      <img src="/kivo-pro.png" alt="Kivo Pro" className="h-5 sm:h-6 w-auto object-contain" />
+                    </div>
+                  )}
+                  {key === "premium" && (
+                    <div className="mb-2 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800 shadow-xs inline-flex items-center">
+                      <img src="/kivo-premium.png" alt="Kivo Premium" className="h-5 sm:h-6 w-auto object-contain" />
+                    </div>
+                  )}
+                  {key === "cafe" && (
+                    <div className="mb-2 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800 shadow-xs inline-flex items-center">
+                      <img src="/kivo-cafe.png" alt="Kivo Cafe Plan" className="h-5 sm:h-6 w-auto object-contain" />
+                    </div>
+                  )}
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-xs uppercase tracking-widest font-extrabold text-blue-600">
                       {value.name} Tier

@@ -429,11 +429,8 @@ export default function DukaanProStudio({ user, currentShop, isPro }) {
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-widest bg-purple-500/30 text-purple-200 border border-purple-400/40 font-mono flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                DUKAAN PRO STUDIO
-              </span>
+            <div className="flex flex-wrap items-center gap-3">
+              <img src="/kivo-pro-studio.png" alt="Kivo Pro Studio" className="h-8 md:h-9 w-auto object-contain drop-shadow-md" />
               {isPro ? (
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 flex items-center gap-1">
                   <CheckCircle2 className="w-3 h-3" /> Plan Active
@@ -991,9 +988,14 @@ export default function DukaanProStudio({ user, currentShop, isPro }) {
                     <Bot className="w-5 h-5" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-sm text-brand-indigo">
-                      AI Inventory Restock Predictor
-                    </h4>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-bold text-sm text-brand-indigo">
+                        AI Inventory Restock Predictor
+                      </h4>
+                      <div className="bg-slate-950 px-2 py-0.5 rounded-lg border border-slate-800 shadow-xs inline-flex items-center">
+                        <img src="/kivo-ai.png" alt="Kivo AI" className="h-4 w-auto object-contain" />
+                      </div>
+                    </div>
                     <p className="text-xs text-brand-indigo/60">
                       Calculates 7-day velocity to forecast which items will run out of stock in the next 72 hours.
                     </p>

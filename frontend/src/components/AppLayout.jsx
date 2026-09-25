@@ -1,4 +1,4 @@
-import { Outlet, NavLink, useNavigate } from "react-router-dom";
+import { Outlet, NavLink, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { t } from "@/lib/i18n";
@@ -534,8 +534,19 @@ export default function AppLayout() {
       ===================================================== */}
       <aside className="hidden md:flex flex-col w-60 xl:w-64 shrink-0 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 h-screen sticky top-0 z-40">
         {/* Logo & Tagline */}
-        <div className="p-4 sm:p-5 flex items-center gap-3">
-          <img src="/kivo-logo.png" alt="Kivo" className="h-8 w-auto object-contain" />
+        <div className="p-4 sm:p-5 flex items-center justify-between gap-2">
+          <Link to="/app" className="flex items-center gap-2">
+            <img src="/kivo-logo.png" alt="Kivo" className="h-8 w-auto object-contain" />
+          </Link>
+          {subscription?.plan === "pro" || user?.is_pro ? (
+            <Link to="/pro-studio" title="Kivo Pro Active" className="bg-slate-950 px-2 py-0.5 rounded-lg border border-slate-800 shadow-xs hover:border-blue-500 transition-colors shrink-0">
+              <img src="/kivo-pro.png" alt="Pro" className="h-4.5 w-auto object-contain" />
+            </Link>
+          ) : subscription?.plan === "premium" || user?.is_premium ? (
+            <Link to="/app/subscribe" title="Kivo Premium Active" className="bg-slate-950 px-2 py-0.5 rounded-lg border border-slate-800 shadow-xs hover:border-amber-500 transition-colors shrink-0">
+              <img src="/kivo-premium.png" alt="Premium" className="h-4.5 w-auto object-contain" />
+            </Link>
+          ) : null}
         </div>
 
         {/* Navigation Links (Matching Screenshot: 8 items) */}

@@ -593,6 +593,21 @@ export default function Billing() {
                 )}
 
                 <div>
+                  {plan.id === "pro" && (
+                    <div className="mb-2 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800 shadow-xs inline-flex items-center">
+                      <img src="/kivo-pro.png" alt="Kivo Pro" className="h-5 sm:h-6 w-auto object-contain" />
+                    </div>
+                  )}
+                  {plan.id === "premium" && (
+                    <div className="mb-2 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800 shadow-xs inline-flex items-center">
+                      <img src="/kivo-premium.png" alt="Kivo Premium" className="h-5 sm:h-6 w-auto object-contain" />
+                    </div>
+                  )}
+                  {plan.id === "cafe" && (
+                    <div className="mb-2 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800 shadow-xs inline-flex items-center">
+                      <img src="/kivo-cafe.png" alt="Kivo Cafe Plan" className="h-5 sm:h-6 w-auto object-contain" />
+                    </div>
+                  )}
                   <div className="flex items-center justify-between mb-4">
                     <span className={`text-xs font-bold uppercase tracking-wider ${plan.is_pro ? "text-amber-300" : plan.is_cafe ? "text-orange-300" : "text-blue-600 dark:text-blue-400"}`}>
                       {plan.name}

@@ -1989,7 +1989,7 @@ export default function AdminSubscriptions() {
 
         <header className="relative z-10 max-w-6xl mx-auto w-full px-6 py-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="Dukaan" className="h-9 w-auto brightness-200 invert drop-shadow-sm" />
+            <img src="/kivo-admin.png" alt="Kivo Admin" className="h-9 w-auto object-contain drop-shadow-sm" />
             <span className="text-xs font-mono font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-slate-800 text-indigo-400 border border-slate-700">
               Master Control
             </span>
@@ -2113,7 +2113,7 @@ export default function AdminSubscriptions() {
           
           <div className="flex items-center gap-3">
             <Link to="/admin" className="flex items-center gap-2.5 group">
-              <img src="/logo.png" alt="Dukaan" className="h-8 sm:h-9 w-auto brightness-200 invert drop-shadow-sm transition-transform group-hover:scale-105" />
+              <img src="/kivo-admin.png" alt="Kivo Admin" className="h-8 sm:h-9 w-auto object-contain transition-transform group-hover:scale-105" />
               <div className="hidden sm:block">
                 <div className="flex items-center gap-2">
                   <span className="font-display font-extrabold text-white text-base tracking-tight">Master Console</span>
