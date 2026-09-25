@@ -434,31 +434,7 @@ export function AuthProvider({ children }) {
     const isUserAdmin = isAdminEmail(cleanEmail);
 
     const localFound = regUsers.find(u => u.email && u.email.toLowerCase() === cleanEmail);
-    if (localFound) {
-      if (!isUserAdmin && localFound.password && localFound.password !== password) {
-        return { ok: false, error: "Incorrect password. Please try again." };
-      }
-      if (!isUserAdmin) {
-        if (localFound.is_verified === false || localFound.email_verified === false) {
-          return {
-            ok: false,
-            error: "Please verify your email address before signing in.",
-            needVerification: true,
-            step: "email",
-            email: cleanEmail
-          };
-        }
-        if (!localFound.phone_verified) {
-          return {
-            ok: false,
-            error: "Please verify your mobile number before signing in.",
-            needPhoneVerification: true,
-            step: "phone",
-            email: cleanEmail
-          };
-        }
-      }
-    }
+    // Never validate passwords against browser-stored credentials. The server is authoritative.
 
     try {
       const { data } = await api.post("/auth/login", { 
