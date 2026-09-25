@@ -331,6 +331,11 @@ class ProductIn(BaseModel):
     min_stock: int = 5
     unlimited_stock: bool = False
     image_data_url: Optional[str] = ""
+    barcode: Optional[str] = ""
+    hsn: Optional[str] = ""
+    gst_rate: Optional[float] = Field(default=0, ge=0, le=100)
+    batch_number: Optional[str] = ""
+    expiry_date: Optional[str] = ""
 
 class CustomerIn(BaseModel):
     name: str
@@ -1588,26 +1593,87 @@ async def list_products(shop: dict = Depends(get_shop), q: Optional[str] = None,
 
 @api.post("/products")
 async def create_product(body: ProductIn, shop: dict = Depends(get_shop)):
-    doc = body.model_dump(); doc["shop_id"] = shop["id"]; doc["created_at"] = now_iso()
-    r = await db.products.insert_one(doc); doc["id"] = str(r.inserted_id); doc.pop("_id", None)
+    doc = body.model_dump()
+    doc["shop_id"] = shop["id"]
+    doc["created_at"] = now_iso()
+    r = await db.products.insert_one(doc)
+    doc["id"] = str(r.inserted_id)
+    doc.pop("_id", None)
     return doc
 
 @api.put("/products/{pid}")
 async def update_product(pid: str, body: ProductIn, shop: dict = Depends(get_shop)):
-    if not ObjectId.is_valid(pid): raise HTTPException(400, "bad id")
-    res = await db.products.update_one({"_id": ObjectId(pid), "shop_id": shop["id"]}, {"$set": body.model_dump()})
-    if res.matched_count == 0: raise HTTPException(404, "not found")
+    if not ObjectId.is_valid(pid):
+        raise HTTPException(400, "bad id")
+    res = await db.products.update_one(
+        {"_id": ObjectId(pid), "shop_id": shop["id"]},
+        {"$set": body.model_dump()},
+    )
+    if res.matched_count == 0:
+        raise HTTPException(404, "not found")
     return clean(await db.products.find_one({"_id": ObjectId(pid)}))
+
+@api.delete("/products/{pid}")
+async def delete_product(pid: str, shop: dict = Depends(get_shop)):
+    if not ObjectId.is_valid(pid):
+        raise HTTPException(400, "bad id")
+    product = await db.products.find_one({"_id": ObjectId(pid), "shop_id": shop["id"]})
+    if not product:
+        raise HTTPException(404, "not found")
+    await db.products.delete_one({"_id": product["_id"], "shop_id": shop["id"]})
+    return {"ok": True, "id": pid}
 
 @api.post("/products/{pid}/stock")
 async def adjust_stock(pid: str, body: StockAdjustIn, shop: dict = Depends(get_shop)):
-    if not ObjectId.is_valid(pid): raise HTTPException(400, "bad id")
+    if not ObjectId.is_valid(pid):
+        raise HTTPException(400, "bad id")
+    if body.qty == 0:
+        raise HTTPException(400, "Stock adjustment cannot be zero")
     prod = await db.products.find_one({"_id": ObjectId(pid), "shop_id": shop["id"]})
-    if not prod: raise HTTPException(404, "not found")
-    if prod.get("unlimited_stock"): return clean(prod)
-    await db.products.update_one({"_id": prod["_id"]}, {"$inc": {"stock": body.qty}})
-    await db.stock_movements.insert_one({"shop_id": shop["id"],"product_id":pid,"qty":body.qty,"reason":body.reason,"created_at":now_iso()})
+    if not prod:
+        raise HTTPException(404, "not found")
+    if prod.get("unlimited_stock"):
+        return clean(prod)
+    if body.qty < 0:
+        result = await db.products.update_one(
+            {"_id": prod["_id"], "shop_id": shop["id"], "stock": {"$gte": abs(body.qty)}},
+            {"$inc": {"stock": body.qty}},
+        )
+    else:
+        result = await db.products.update_one(
+            {"_id": prod["_id"], "shop_id": shop["id"]},
+            {"$inc": {"stock": body.qty}},
+        )
+    if result.matched_count == 0:
+        raise HTTPException(409, "Stock cannot go below zero")
+    await db.stock_movements.insert_one({
+        "shop_id": shop["id"], "product_id": pid, "qty": body.qty,
+        "reason": body.reason, "created_at": now_iso(),
+    })
     return clean(await db.products.find_one({"_id": prod["_id"]}))
+
+@api.post("/products/sync-all")
+async def sync_products_all_branches(shop: dict = Depends(get_shop)):
+    source = await db.products.find({"shop_id": shop["id"]}).to_list(1000)
+    branches = await db.shops.find({
+        "owner_id": shop.get("owner_id"), "_id": {"$ne": ObjectId(shop["id"])}
+    }).to_list(100)
+    synced = 0
+    for branch in branches:
+        target_id = str(branch["_id"])
+        for product in source:
+            match = {"barcode": product["barcode"]} if product.get("barcode") else {"name": product.get("name")}
+            existing = await db.products.find_one({"shop_id": target_id, **match})
+            payload = {k: v for k, v in product.items() if k not in {"_id", "shop_id", "created_at", "stock"}}
+            payload["shop_id"] = target_id
+            if existing:
+                await db.products.update_one({"_id": existing["_id"]}, {"$set": payload})
+            else:
+                payload["stock"] = 0 if product.get("unlimited_stock") else int(product.get("stock", 0))
+                payload["created_at"] = now_iso()
+                await db.products.insert_one(payload)
+            synced += 1
+    return {"ok": True, "synced": synced}
 
 # =========================================================
 # CUSTOMERS
