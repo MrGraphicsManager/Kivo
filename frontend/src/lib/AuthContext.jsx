@@ -21,34 +21,8 @@ export const ADMIN_EMAIL = "contact@officialdukaan.in";
 export const isAdminEmail = (email) => (email || "").toLowerCase().trim() === ADMIN_EMAIL;
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    try {
-      const stored = localStorage.getItem("dukaan_user");
-      if (!stored) return null;
-      const parsed = JSON.parse(stored);
-      // Admin account (contact@officialdukaan.in) must NOT auto-login!
-      // Every time login is required.
-      if (parsed && (isAdminEmail(parsed.email) || parsed.is_admin)) {
-        const isSessionAuth = sessionStorage.getItem("dukaan_admin_authenticated");
-        if (!isSessionAuth) {
-          return null; // Never auto-login admin across browser restarts/reloads
-        }
-      }
-      return parsed;
-    } catch {
-      return null;
-    }
-  });
-  const [shops, setShops] = useState(() => {
-    try {
-      const stored = localStorage.getItem("dukaan_shops");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch {}
-    return [DEFAULT_SHOP];
-  });
+  const [user, setUser] = useState(null);
+  const [shops, setShops] = useState([]);
   const [currentShopId, setCurrentShopId] = useState(localStorage.getItem("dukaan_shop_id") || DEFAULT_SHOP.id);
   const [lang, setLang] = useState(localStorage.getItem("dukaan_lang") || "en");
 
@@ -89,9 +63,7 @@ export function AuthProvider({ children }) {
     setUser((prev) => {
       const current = prev || {};
       const next = typeof updater === "function" ? updater(current) : { ...current, ...updater };
-      // Cache display state only; authentication, subscriptions and ownership remain server-authoritative.
-      try { localStorage.setItem("dukaan_user", JSON.stringify(next)); } catch {}
-      return next;
+        return next;
     });
   }, []);
 
@@ -130,7 +102,6 @@ export function AuthProvider({ children }) {
           is_pro: data.is_pro || (finalSub?.plan === "pro")
         };
         setUser(finalUser);
-        localStorage.setItem("dukaan_user", JSON.stringify(finalUser));
         await loadShops(finalUser.default_shop_id);
         return finalUser;
       }
@@ -143,7 +114,7 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     refresh();
-    const interval = setInterval(refresh, 4000);
+    const interval = setInterval(refresh, 60000);
     const onFocus = () => refresh();
     window.addEventListener("focus", onFocus);
     const onVis = () => {
@@ -191,8 +162,6 @@ export function AuthProvider({ children }) {
         };
       }
 
-      if (data?.access_token) {
-      }
       
       if (isUserAdmin) {
         sessionStorage.setItem("dukaan_admin_authenticated", "true");
@@ -213,7 +182,6 @@ export function AuthProvider({ children }) {
         is_pro: Boolean((data?.user || {}).is_pro || (u || {}).is_pro || finalSub?.plan === "pro")
       };
       setUser(finalUser);
-      localStorage.setItem("dukaan_user", JSON.stringify(finalUser));
       return { ok: true, user: finalUser };
     } catch (err) {
       const status = err.response?.status;
@@ -268,8 +236,6 @@ export function AuthProvider({ children }) {
         code: cleanInput, 
         token: cleanInput 
       });
-      if (data?.access_token) {
-      }
       const u = await refresh();
       const verifiedUser = {
         ...(u || data?.user || { email: cleanEmail }),
@@ -277,7 +243,7 @@ export function AuthProvider({ children }) {
         email_verified: true
       };
       setUser(verifiedUser);
-      localStorage.setItem("dukaan_user", JSON.stringify(verifiedUser));\n      return { ok: true, user: verifiedUser };
+      return { ok: true, user: verifiedUser };
     } catch (err) {
       if (err.response?.status === 400) {
         return { 
@@ -353,8 +319,6 @@ export function AuthProvider({ children }) {
         email: cleanEmail
       });
 
-      if (data?.access_token) {
-      }
 
       const verifiedUser = {
         ...(user || {}),
@@ -367,7 +331,7 @@ export function AuthProvider({ children }) {
       };
 
       setUser(verifiedUser);
-      localStorage.setItem("dukaan_user", JSON.stringify(verifiedUser));\n      await refresh();
+      await refresh();
       return { ok: true, user: verifiedUser };
     } catch (err) {
       if (err.response?.status === 400) {
@@ -398,13 +362,12 @@ export function AuthProvider({ children }) {
         avatar: avatar || ""
       });
 
-      if (!data?.access_token || !data?.user) {
+      if (!data?.user) {
         return { ok: false, error: "Social authentication could not be verified." };
       }
 
       const socialUser = data.user;
       setUser(socialUser);
-      localStorage.setItem("dukaan_user", JSON.stringify(socialUser));
 
       if (socialUser.is_admin) {
         sessionStorage.setItem("dukaan_admin_authenticated", "true");
