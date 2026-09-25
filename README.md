@@ -119,3 +119,10 @@ Visit `http://localhost:3000` to launch Kivo.
 
 ## 📄 License
 This project is open-source and available under the [MIT License](LICENSE).
+
+
+## Production backend configuration
+
+Kivo uses the FastAPI + MongoDB backend as the production source of truth. Configure the deployment environment variable `KIVO_BACKEND_URL` to the deployed FastAPI base URL (for example, `https://api.example.com/api`). Do not point it at the legacy Netlify stateful function.
+
+Required backend variables include `MONGO_URL`, `DB_NAME`, `JWT_SECRET`, `CORS_ORIGINS`, `ADMIN_EMAIL`, and the payment/email provider secrets used by enabled features.
