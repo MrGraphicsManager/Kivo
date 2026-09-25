@@ -512,7 +512,8 @@ def _assert_safe_email(subject: str, html: str) -> None:
     scan = _EmailScan(); scan.feed(html)
     if scan.tags & {"form", "input", "textarea", "select"}:
         raise ValueError("No forms in email (G2)")
-    body = f"{subject}\n{html}".lower()
+    body = f"{subject}
+{html}".lower()
     for p in _CRED_ASK:
         if p in body:
             raise ValueError(f"Email asks for credentials: {p!r} (G2)")
@@ -628,7 +629,8 @@ async def send_email(to: str, subject: str, html: str):
 # Auth
 # =========================================================
 @api.post("/auth/register")
-async def register(body: RegisterIn, response: Response, request: Request):\n    await _rate_limit(_client_key(request, "register"), 5, 300)
+async def register(body: RegisterIn, response: Response, request: Request):
+    await _rate_limit(_client_key(request, "register"), 5, 300)
     email = body.email.lower().strip()
     existing = await db.users.find_one({"email": email})
     if existing:
@@ -806,7 +808,8 @@ async def social_login(body: dict, response: Response):
     }
 
 @api.post("/auth/verify-email")
-async def verify_email(body: dict, response: Response, request: Request):\n    await _rate_limit(_client_key(request, "verify-email"), 10, 300)
+async def verify_email(body: dict, response: Response, request: Request):
+    await _rate_limit(_client_key(request, "verify-email"), 10, 300)
     email = body.get("email", "").lower().strip()
     code = str(body.get("code", "")).strip()
     token = str(body.get("token", "")).strip()
@@ -868,7 +871,8 @@ async def verify_email(body: dict, response: Response, request: Request):\n    a
     }
 
 @api.post("/auth/resend-verification")
-async def resend_verification(body: dict, request: Request):\n    await _rate_limit(_client_key(request, "resend-verification"), 3, 300)
+async def resend_verification(body: dict, request: Request):
+    await _rate_limit(_client_key(request, "resend-verification"), 3, 300)
     email = body.get("email", "").lower().strip()
     user = await db.users.find_one({"email": email})
     if not user:
@@ -912,7 +916,8 @@ async def resend_verification(body: dict, request: Request):\n    await _rate_li
     }
 
 @api.post("/auth/login")
-async def login(body: LoginIn, response: Response, request: Request):\n    await _rate_limit(_client_key(request, "login"), 10, 60)
+async def login(body: LoginIn, response: Response, request: Request):
+    await _rate_limit(_client_key(request, "login"), 10, 60)
     email = body.email.lower().strip()
     user = await db.users.find_one({"email": email})
     if not user:
@@ -954,7 +959,8 @@ async def logout(response: Response):
     return {"ok": True}
 
 @api.post("/auth/forgot-password")
-async def forgot_password(body: dict, request: Request):\n    await _rate_limit(_client_key(request, "forgot-password"), 5, 300)
+async def forgot_password(body: dict, request: Request):
+    await _rate_limit(_client_key(request, "forgot-password"), 5, 300)
     email = body.get("email", "").lower().strip()
     if not email:
         raise HTTPException(400, "Email address is required.")
@@ -999,7 +1005,8 @@ async def forgot_password(body: dict, request: Request):\n    await _rate_limit(
     }
 
 @api.post("/auth/reset-password")
-async def reset_password(body: dict, request: Request):\n    await _rate_limit(_client_key(request, "reset-password"), 10, 300)
+async def reset_password(body: dict, request: Request):
+    await _rate_limit(_client_key(request, "reset-password"), 10, 300)
     token = body.get("token")
     code = body.get("code")
     email = body.get("email", "").lower().strip()
@@ -1097,7 +1104,8 @@ async def start_free_trial(body: TrialStartIn, user: dict = Depends(get_current_
     return {"ok": True, "status": "active", "trial": True, "trial_days": plan["trial_days"], "starts_at": doc["starts_at"], "expires_at": doc["expires_at"], "subscription": doc}
 
 @api.post("/subscriptions/submit")
-async def submit_subscription(body: SubscriptionSubmitIn, user: dict = Depends(get_current_user)):
+async def submit_subscription(body: SubscriptionSubmitIn, request: Request, user: dict = Depends(get_current_user)):
+    await _rate_limit(_client_key(request, "subscription-submit"), 5, 300)
     plan = PLANS[body.plan]
     now = now_iso()
     doc = {
@@ -1314,7 +1322,8 @@ def _iso_dt(v):
 
 
 @api.post("/subscriptions/razorpay/order")
-async def razorpay_order(body: RazorpayOrderIn, request: Request, user: dict = Depends(get_current_user)):\n    await _rate_limit(_client_key(request, "razorpay-order"), 10, 60)
+async def razorpay_order(body: RazorpayOrderIn, request: Request, user: dict = Depends(get_current_user)):
+    await _rate_limit(_client_key(request, "razorpay-order"), 10, 60)
     active = await _active_sub(user['id'])
     now = datetime.now(timezone.utc)
     if body.renew and active:
@@ -1398,7 +1407,8 @@ async def _finalize_razorpay_payment(order_id: str, payment_id: str, signature: 
 
 
 @api.post("/subscriptions/razorpay/verify")
-async def razorpay_verify(body: RazorpayVerifyIn, request: Request, user: dict = Depends(get_current_user)):\n    await _rate_limit(_client_key(request, "razorpay-verify"), 10, 60)
+async def razorpay_verify(body: RazorpayVerifyIn, request: Request, user: dict = Depends(get_current_user)):
+    await _rate_limit(_client_key(request, "razorpay-verify"), 10, 60)
     sub = await db.subscriptions.find_one({"user_id":user['id'],"razorpay_order_id":body.razorpay_order_id,"status":"pending","payment_method":"razorpay"})
     if not sub:
         existing = await db.subscriptions.find_one({"user_id":user['id'],"razorpay_order_id":body.razorpay_order_id,"razorpay_payment_id":body.razorpay_payment_id})
@@ -2085,7 +2095,13 @@ async def list_udhaar(shop: dict = Depends(get_shop_plan("business"))):
 async def udhaar_pay(body: UdhaarPaymentIn, shop: dict = Depends(get_shop_plan("business"))):
     remaining = float(body.amount)
     if remaining <= 0: raise HTTPException(400, "invalid amount")
-    cur = db.orders.find({"shop_id": shop["id"], "customer_id": str(body.customer_id), "pending_amount": {"$gt": 0}}).sort("created_at", 1)
+    customer_id = str(body.customer_id)
+    if not ObjectId.is_valid(customer_id):
+        raise HTTPException(400, "invalid customer")
+    customer = await db.customers.find_one({"_id": ObjectId(customer_id), "shop_id": shop["id"]})
+    if not customer:
+        raise HTTPException(404, "customer not found")
+    cur = db.orders.find({"shop_id": shop["id"], "customer_id": customer_id, "pending_amount": {"$gt": 0}}).sort("created_at", 1)
     async for o in cur:
         if remaining <= 0: break
         pay = min(remaining, float(o["pending_amount"]))
