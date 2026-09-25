@@ -153,14 +153,14 @@ export default function POS() {
   const userPlan = user?.subscription?.plan || "starter";
   const isPremium = userPlan === "premium" || user?.is_premium || user?.is_admin;
 
-  const [products, setProducts] = useState(() => getStoredProducts());
+  const [products, setProducts] = useState([]);
   const [q, setQ] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [cart, setCart] = useState([]); // {product_id, name, price, qty, unit}
   const [discount, setDiscount] = useState(0);
   const [discountType, setDiscountType] = useState("flat"); // "flat" or "percent"
   const [customerId, setCustomerId] = useState("");
-  const [customers, setCustomers] = useState(() => getStoredCustomers());
+  const [customers, setCustomers] = useState([]);
   const [shop, setShop] = useState(null);
 
   // New Dukaan 3.0 POS States (Matching Screenshot)
@@ -509,47 +509,19 @@ export default function POS() {
   };
 
   useEffect(() => {
-    api.get("/products")
-      .then(r => setProducts(Array.isArray(r.data) && r.data.length > 0 ? r.data : getStoredProducts()))
-      .catch(() => setProducts(getStoredProducts()));
-
-    let localCusts = [];
-    try {
-      const raw = localStorage.getItem("dukaan_customers");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) localCusts = parsed;
-      }
-    } catch {}
-
-    api.get("/customers")
-      .then(r => {
-        const serverCusts = Array.isArray(r.data) ? r.data : [];
-        const merged = [...serverCusts];
-        localCusts.forEach(lc => {
-          if (!merged.some(m => (m.id && m.id === lc.id) || (m.phone && lc.phone && m.phone === lc.phone))) {
-            merged.push(lc);
-          }
-        });
-        setCustomers(merged.length > 0 ? merged : localCusts);
+    Promise.all([api.get("/products"), api.get("/customers"), api.get("/shops")])
+      .then(([productsRes, customersRes, shopsRes]) => {
+        setProducts(Array.isArray(productsRes.data) ? productsRes.data : []);
+        setCustomers(Array.isArray(customersRes.data) ? customersRes.data : []);
+        const list = Array.isArray(shopsRes.data) ? shopsRes.data : [];
+        setShop(list.find(s => s.id === currentShopId) || list[0] || null);
       })
-      .catch(() => setCustomers(localCusts));
+      .catch(() => {
+        setProducts([]);
+        setCustomers([]);
+      });
+  }, [currentShopId]);
 
-    api.get("/shops").then(r => {
-      const shopId = localStorage.getItem("dukaan_shop_id");
-      const list = Array.isArray(r.data) ? r.data : [];
-      setShop(list.find(s => s.id === shopId) || list[0]);
-    });
-
-    const handleProds = () => setProducts(getStoredProducts());
-    const handleCusts = () => setCustomers(getStoredCustomers());
-    window.addEventListener("dukaan_products_updated", handleProds);
-    window.addEventListener("dukaan_customers_updated", handleCusts);
-    return () => {
-      window.removeEventListener("dukaan_products_updated", handleProds);
-      window.removeEventListener("dukaan_customers_updated", handleCusts);
-    };
-  }, []);
 
   // Compute categories (Matching Mockup)
   const categories = useMemo(() => {
