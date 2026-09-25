@@ -38,8 +38,7 @@ export default function Dashboard() {
         api.get("/orders", { params: { limit: 10 } }).catch(() => null),
       ]);
       const data = dashboardRes?.data || {};
-      const localOrders = getSafeOrders();
-      const orders = (Array.isArray(ordersRes?.data) && ordersRes.data.length > 0) ? ordersRes.data : localOrders;
+      const orders = Array.isArray(ordersRes?.data) ? ordersRes.data : [];
 
       setD({
         recent_orders: orders,
@@ -47,7 +46,7 @@ export default function Dashboard() {
       });
     } catch (e) {
       setD({
-        recent_orders: getSafeOrders(),
+        recent_orders: [],
         today: {},
       });
     } finally {
