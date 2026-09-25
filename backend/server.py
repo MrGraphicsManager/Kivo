@@ -82,6 +82,29 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("kivo")
 
 
+@app.middleware("http")
+async def request_observability(request: Request, call_next):
+    request_id = request.headers.get("X-Request-ID", "").strip()[:100] or secrets.token_hex(8)
+    request.state.request_id = request_id
+    started = datetime.now(timezone.utc)
+    try:
+        response = await call_next(request)
+        response.headers["X-Request-ID"] = request_id
+        elapsed_ms = (datetime.now(timezone.utc) - started).total_seconds() * 1000
+        logger.info(
+            "request_complete request_id=%s method=%s path=%s status=%s duration_ms=%.1f",
+            request_id, request.method, request.url.path, response.status_code, elapsed_ms,
+        )
+        return response
+    except Exception:
+        elapsed_ms = (datetime.now(timezone.utc) - started).total_seconds() * 1000
+        logger.exception(
+            "request_failed request_id=%s method=%s path=%s duration_ms=%.1f",
+            request_id, request.method, request.url.path, elapsed_ms,
+        )
+        raise
+
+
 # =========================================================
 # Lightweight per-process abuse protection
 # =========================================================
