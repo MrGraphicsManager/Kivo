@@ -23,36 +23,6 @@ export const isAdminEmail = (email) => (email || "").toLowerCase().trim() === AD
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     try {
-      // One-time session flush for all existing merchants (Sep 2026 strict rule)
-      const FLUSH_KEY = "dukaan_merchant_flush_2026_09_09_v1";
-      if (!localStorage.getItem(FLUSH_KEY)) {
-        try {
-          const raw = localStorage.getItem("dukaan_user");
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            if (parsed && !isAdminEmail(parsed.email) && !parsed.is_admin) {
-              localStorage.removeItem("dukaan_user");
-              localStorage.removeItem("dukaan_access_token");
-            }
-          }
-          const regRaw = localStorage.getItem("dukaan_registered_users");
-          if (regRaw) {
-            let regList = JSON.parse(regRaw);
-            if (Array.isArray(regList)) {
-              regList = regList.map(u => {
-                if (u && !isAdminEmail(u.email) && !u.is_admin) {
-                  return { ...u, is_verified: false, email_verified: false, phone_verified: false };
-                }
-                return u;
-              });
-              localStorage.setItem("dukaan_registered_users", JSON.stringify(regList));
-            }
-          }
-        } catch (_) {}
-        localStorage.setItem(FLUSH_KEY, "true");
-        return null;
-      }
-
       const stored = localStorage.getItem("dukaan_user");
       if (!stored) return null;
       const parsed = JSON.parse(stored);
@@ -222,7 +192,6 @@ export function AuthProvider({ children }) {
       }
 
       if (data?.access_token) {
-        localStorage.setItem("dukaan_access_token", data.access_token);
       }
       
       if (isUserAdmin) {
@@ -300,7 +269,6 @@ export function AuthProvider({ children }) {
         token: cleanInput 
       });
       if (data?.access_token) {
-        localStorage.setItem("dukaan_access_token", data.access_token);
       }
       const u = await refresh();
       const verifiedUser = {
@@ -386,7 +354,6 @@ export function AuthProvider({ children }) {
       });
 
       if (data?.access_token) {
-        localStorage.setItem("dukaan_access_token", data.access_token);
       }
 
       const verifiedUser = {
@@ -435,7 +402,6 @@ export function AuthProvider({ children }) {
         return { ok: false, error: "Social authentication could not be verified." };
       }
 
-      localStorage.setItem("dukaan_access_token", data.access_token);
       const socialUser = data.user;
       setUser(socialUser);
       localStorage.setItem("dukaan_user", JSON.stringify(socialUser));
@@ -497,7 +463,6 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     try { await api.post("/auth/logout"); } catch {}
     sessionStorage.removeItem("dukaan_admin_authenticated");
-    localStorage.removeItem("dukaan_access_token");
     localStorage.removeItem("dukaan_user");
     setUser(null);
   };
