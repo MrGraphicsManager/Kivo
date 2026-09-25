@@ -24,7 +24,7 @@ import {
 
 export default function Customers() {
   const nav = useNavigate();
-  const [items, setItems] = useState(() => getStoredCustomers());
+  const [items, setItems] = useState([]);
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState("all"); // "all", "udhaar", "paid"
   const [form, setForm] = useState({ open: false, id: null, name: "", phone: "", notes: "" });
@@ -41,13 +41,7 @@ export default function Customers() {
     /* eslint-disable-next-line */
   }, [q]);
 
-  useEffect(() => {
-    const handleCustomersUpdated = () => {
-      setItems(getStoredCustomers());
-    };
-    window.addEventListener("dukaan_customers_updated", handleCustomersUpdated);
-    return () => window.removeEventListener("dukaan_customers_updated", handleCustomersUpdated);
-  }, []);
+
 
   // Aggregate stats
   const totalUdhaarPending = useMemo(() => {
@@ -71,51 +65,29 @@ export default function Customers() {
     });
   }, [items, filter]);
 
-  const save = () => {
+  const save = async () => {
     if (!form.name.trim()) return toast.error("Customer name is required");
-    const newCustomer = {
-      id: form.id || `c_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+    setBusy(true);
+    const payload = {
       name: form.name.trim(),
       phone: form.phone.trim(),
       notes: form.notes.trim(),
-      total_purchases: Number(form.total_purchases || 0),
-      totalSpent: Number(form.total_purchases || 0),
-      total_paid: Number(form.total_paid || 0),
-      total_pending: Number(form.total_pending || 0),
-      udhaar: Number(form.total_pending || 0),
-      created_at: form.created_at || new Date().toISOString()
     };
-
-    // ⚡ STEP 1: INSTANT LOCAL SAVE (0.001 SEC)
-    const current = getStoredCustomers();
-    const idx = current.findIndex(x => x.id === newCustomer.id || (x.phone && newCustomer.phone && x.phone === newCustomer.phone));
-    let updated;
-    if (idx >= 0) {
-      updated = [...current];
-      updated[idx] = { ...updated[idx], ...newCustomer };
-    } else {
-      updated = [newCustomer, ...current];
-    }
-    saveStoredCustomers(updated);
-    setItems(updated);
-    toast.success(form.id ? `⚡ Customer "${newCustomer.name}" updated!` : `⚡ Customer "${newCustomer.name}" added to directory!`);
-    setForm({ open: false, id: null, name: "", phone: "", notes: "" });
-
-    // ⚡ STEP 2: ASYNC BACKGROUND SYNC
-    if (form.id && !form.id.startsWith("c_")) {
-      api.put(`/customers/${form.id}`, newCustomer).catch(() => {});
-    } else {
-      api.post("/customers", newCustomer).then(res => {
-        if (res?.data?.id && res.data.id !== newCustomer.id) {
-          const custs = getStoredCustomers();
-          const cIdx = custs.findIndex(c => c.id === newCustomer.id);
-          if (cIdx !== -1) {
-            custs[cIdx].id = res.data.id;
-            saveStoredCustomers(custs);
-            setItems([...custs]);
-          }
-        }
-      }).catch(() => {});
+    try {
+      if (form.id) {
+        const res = await api.put(`/customers/${form.id}`, payload);
+        setItems(prev => prev.map(c => c.id === form.id ? { ...c, ...res.data } : c));
+        toast.success(`Customer "${payload.name}" updated!`);
+      } else {
+        const res = await api.post("/customers", payload);
+        setItems(prev => [res.data, ...prev]);
+        toast.success(`Customer "${payload.name}" added to directory!`);
+      }
+      setForm({ open: false, id: null, name: "", phone: "", notes: "" });
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || "Could not save customer");
+    } finally {
+      setBusy(false);
     }
   };
 
