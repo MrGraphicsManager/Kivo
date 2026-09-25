@@ -126,3 +126,5 @@ This project is open-source and available under the [MIT License](LICENSE).
 Kivo uses the FastAPI + MongoDB backend as the production source of truth. Configure the deployment environment variable `KIVO_BACKEND_URL` to the deployed FastAPI base URL (for example, `https://api.example.com/api`). Do not point it at the legacy Netlify stateful function.
 
 Required backend variables include `MONGO_URL`, `DB_NAME`, `JWT_SECRET`, `CORS_ORIGINS`, `ADMIN_EMAIL`, and the payment/email provider secrets used by enabled features.
+
+MongoDB production deployment must support replica sets or MongoDB transactions (for example, Atlas). Kivo checkout uses a transaction to commit the order, stock decrement, and stock movement records atomically; a standalone MongoDB server is not supported for production checkout.
