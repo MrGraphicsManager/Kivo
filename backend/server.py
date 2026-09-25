@@ -1668,21 +1668,118 @@ async def get_customer(cid: str, shop: dict = Depends(get_shop_paid)):
 # =========================================================
 @api.post("/orders")
 async def create_order(body: OrderIn, shop: dict = Depends(get_shop)):
-    if not body.items: raise HTTPException(400,"No items")
-    subtotal=sum(float(i.price)*int(i.qty) for i in body.items)
-    total=max(0, subtotal-float(body.discount or 0))
-    paid=total if body.payment_method in ("cash","upi") else float(body.amount_received or 0)
-    pending=max(0,total-paid) if body.payment_method=="udhaar" else 0
-    order_no=f"OD-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{secrets.token_hex(2).upper()}"
-    doc={"shop_id":shop["id"],"order_no":order_no,"items":[i.model_dump() for i in body.items],"subtotal":subtotal,"discount":float(body.discount or 0),"total":total,"customer_id":body.customer_id,"payment_method":body.payment_method,"paid_amount":paid,"pending_amount":pending,"amount_received":body.amount_received,"note":body.note or "","created_at":now_iso(),"status":"udhaar" if pending>0 else "paid"}
-    r=await db.orders.insert_one(doc); order_id=str(r.inserted_id)
+    if not body.items:
+        raise HTTPException(400, "No items")
+
+    # Never trust client-supplied prices or stock. Resolve every product from the
+    # current shop before creating the order.
+    normalized_items = []
+    product_rows = {}
+    requested_qty = {}
     for item in body.items:
-        if ObjectId.is_valid(item.product_id):
-            prod=await db.products.find_one({"_id":ObjectId(item.product_id),"shop_id":shop["id"]})
-            if prod and prod.get("unlimited_stock"): continue
-            await db.products.update_one({"_id":ObjectId(item.product_id),"shop_id":shop["id"]},{"$inc":{"stock":-item.qty}})
-            await db.stock_movements.insert_one({"shop_id":shop["id"],"product_id":item.product_id,"qty":-item.qty,"reason":f"sale#{order_no}","created_at":now_iso()})
-    doc["id"]=order_id; doc.pop("_id",None); return doc
+        if not item.product_id or not ObjectId.is_valid(item.product_id):
+            raise HTTPException(400, f"Invalid product: {item.name}")
+        qty = int(item.qty)
+        if qty <= 0:
+            raise HTTPException(400, f"Invalid quantity for {item.name}")
+        pid = str(item.product_id)
+        requested_qty[pid] = requested_qty.get(pid, 0) + qty
+
+    valid_ids = [ObjectId(pid) for pid in requested_qty]
+    async for prod in db.products.find({"_id": {"$in": valid_ids}, "shop_id": shop["id"]}):
+        product_rows[str(prod["_id"])] = prod
+
+    if len(product_rows) != len(requested_qty):
+        raise HTTPException(400, "One or more products are missing or do not belong to this shop")
+
+    for pid, qty in requested_qty.items():
+        prod = product_rows[pid]
+        if not prod.get("unlimited_stock") and int(prod.get("stock", 0)) < qty:
+            raise HTTPException(409, f"Insufficient stock for {prod.get('name', 'product')}")
+
+    for item in body.items:
+        prod = product_rows[item.product_id]
+        normalized_items.append({
+            "product_id": item.product_id,
+            "name": prod.get("name", item.name),
+            "price": float(prod.get("selling_price", 0)),
+            "qty": int(item.qty),
+        })
+
+    subtotal = sum(float(i["price"]) * int(i["qty"]) for i in normalized_items)
+    discount = max(0.0, float(body.discount or 0))
+    if discount > subtotal:
+        discount = subtotal
+    total = max(0.0, subtotal - discount)
+
+    if body.payment_method == "cash":
+        received = float(body.amount_received if body.amount_received is not None else total)
+        if received < total:
+            raise HTTPException(400, "Amount received is less than the bill total")
+        paid = total
+        pending = 0.0
+    elif body.payment_method == "upi":
+        received = total
+        paid = total
+        pending = 0.0
+    else:
+        if not body.customer_id or not ObjectId.is_valid(body.customer_id):
+            raise HTTPException(400, "A valid customer is required for Udhaar")
+        customer = await db.customers.find_one({"_id": ObjectId(body.customer_id), "shop_id": shop["id"]})
+        if not customer:
+            raise HTTPException(400, "Customer does not belong to this shop")
+        received = max(0.0, min(float(body.amount_received or 0), total))
+        paid = received
+        pending = max(0.0, total - paid)
+
+    order_no = f"OD-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{secrets.token_hex(2).upper()}"
+    doc = {
+        "shop_id": shop["id"],
+        "order_no": order_no,
+        "items": normalized_items,
+        "subtotal": subtotal,
+        "discount": discount,
+        "total": total,
+        "customer_id": body.customer_id,
+        "payment_method": body.payment_method,
+        "paid_amount": paid,
+        "pending_amount": pending,
+        "amount_received": received,
+        "note": body.note or "",
+        "created_at": now_iso(),
+        "status": "udhaar" if pending > 0 else "paid",
+    }
+
+    # Insert only after all business rules and stock checks pass.
+    r = await db.orders.insert_one(doc)
+    order_id = str(r.inserted_id)
+
+    # Atomic stock guards prevent a concurrent sale from driving stock below zero.
+    for pid, qty in requested_qty.items():
+        prod = product_rows[pid]
+        if prod.get("unlimited_stock"):
+            continue
+        updated = await db.products.update_one(
+            {"_id": ObjectId(pid), "shop_id": shop["id"], "stock": {"$gte": qty}},
+            {"$inc": {"stock": -qty}},
+        )
+        if updated.modified_count != 1:
+            # This can only happen if another checkout consumed stock between
+            # preflight validation and this update. Remove the just-created order
+            # rather than leaving a confirmed sale with unavailable inventory.
+            await db.orders.delete_one({"_id": r.inserted_id, "shop_id": shop["id"]})
+            raise HTTPException(409, f"Stock changed while processing {prod.get('name', 'product')}; please retry")
+        await db.stock_movements.insert_one({
+            "shop_id": shop["id"],
+            "product_id": pid,
+            "qty": -qty,
+            "reason": f"sale#{order_no}",
+            "created_at": now_iso(),
+        })
+
+    doc["id"] = order_id
+    doc.pop("_id", None)
+    return doc
 
 @api.get("/orders")
 async def list_orders(shop: dict = Depends(get_shop), status: Optional[str] = None, payment_method: Optional[str] = None, q: Optional[str] = None, limit: int = 200):
