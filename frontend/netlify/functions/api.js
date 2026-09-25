@@ -1473,11 +1473,13 @@ exports.handler = async (event, context) => {
     if (path === "/auth/change-password" && event.httpMethod === "POST") {
       const authHeader = event.headers.authorization || event.headers.Authorization || "";
       const user = parseToken(authHeader);
+      const currentPassword = String(body.current_password || "");
       const newPassword = String(body.new_password || "");
       if (!user?.email) return { statusCode: 401, headers, body: JSON.stringify({ detail: "Authentication required." }) };
       if (newPassword.length < 8) return { statusCode: 400, headers, body: JSON.stringify({ detail: "Password must be at least 8 characters." }) };
       const reg = registeredUsersList.find(u => u.email && u.email.toLowerCase() === user.email.toLowerCase());
       if (!reg) return { statusCode: 404, headers, body: JSON.stringify({ detail: "Account not found." }) };
+      if (!verifyPassword(currentPassword, reg.password_hash)) return { statusCode: 401, headers, body: JSON.stringify({ detail: "Current password is incorrect." }) };
       reg.password_hash = hashPassword(newPassword);
       delete reg.password;
       await savePersistentState();
