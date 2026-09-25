@@ -641,135 +641,42 @@ export function AuthProvider({ children }) {
 
   const loginWithSocial = async ({ email, name, provider = "google", avatar, idToken }) => {
     const cleanEmail = (email || "").toLowerCase().trim();
-    const cleanName = (name || (provider === "google" ? "Google User" : "Apple User")).trim();
-
-    // 1. Check persistent subscription BEFORE clearing any session tokens
-    const persistentSub = getPersistentSubscription(cleanEmail);
-
-    // Clear session tokens so old accounts don't leak
-    localStorage.removeItem("dukaan_user");
-    localStorage.removeItem("dukaan_access_token");
-    localStorage.removeItem("dukaan_shop_id");
-
-    let socialUser = {
-      id: `usr_${Date.now()}`,
-      name: cleanName,
-      email: cleanEmail,
-      avatar: avatar || "",
-      is_verified: true,
-      is_admin: false,
-      provider,
-      subscription: persistentSub || null,
-      is_premium: persistentSub?.plan === "premium" || persistentSub?.plan === "pro",
-      is_pro: persistentSub?.plan === "pro"
-    };
+    if (!cleanEmail || !idToken) {
+      return { ok: false, error: "Verified social identity is required." };
+    }
 
     try {
       const { data } = await api.post("/auth/social-login", {
         email: cleanEmail,
-        name: cleanName,
+        name: (name || "").trim(),
         provider,
         id_token: idToken,
         avatar: avatar || ""
       });
 
-      if (data?.access_token) {
-        localStorage.setItem("dukaan_access_token", data.access_token);
+      if (!data?.access_token || !data?.user) {
+        return { ok: false, error: "Social authentication could not be verified." };
       }
-      if (data?.user) {
-        socialUser = {
-          ...socialUser,
-          ...data.user,
-          name: cleanName,
-          email: cleanEmail,
-          avatar: avatar || data.user.avatar || "",
-          provider
-        };
-      }
-    } catch (err) {
-      console.warn("Backend social login offline fallback:", err);
-    }
 
-    // 2. Check local database for existing subscriptions / account history
-    const isUserAdmin = isAdminEmail(cleanEmail);
-    socialUser.is_admin = isUserAdmin;
-    if (isUserAdmin) {
-      sessionStorage.setItem("dukaan_admin_authenticated", "true");
-    } else {
-      sessionStorage.removeItem("dukaan_admin_authenticated");
-    }
+      localStorage.setItem("dukaan_access_token", data.access_token);
+      const socialUser = data.user;
+      setUser(socialUser);
+      localStorage.setItem("dukaan_user", JSON.stringify(socialUser));
 
-    try {
-      let regUsers = JSON.parse(localStorage.getItem("dukaan_registered_users") || "[]");
-      const existing = regUsers.find(ru => ru.email && ru.email.toLowerCase() === cleanEmail);
-      if (existing) {
-        socialUser.id = existing.id || socialUser.id;
-        if (existing.subscription && !socialUser.subscription) {
-          socialUser.subscription = existing.subscription;
-        }
-        socialUser.is_admin = isUserAdmin;
-        existing.is_admin = isUserAdmin;
-        existing.is_verified = true;
-        existing.provider = provider;
-        existing.name = cleanName;
-        if (avatar) existing.avatar = avatar;
-        if (socialUser.subscription) existing.subscription = socialUser.subscription;
+      if (socialUser.is_admin) {
+        sessionStorage.setItem("dukaan_admin_authenticated", "true");
       } else {
-        regUsers.push(socialUser);
+        sessionStorage.removeItem("dukaan_admin_authenticated");
       }
-      localStorage.setItem("dukaan_registered_users", JSON.stringify(regUsers));
-    } catch {}
 
-    // 3. Resolve best subscription between backend, registered users, and persistent map
-    const finalSub = socialUser.subscription || persistentSub || null;
-    socialUser.subscription = finalSub;
-    if (finalSub) {
-      if (finalSub.plan === "premium" || finalSub.plan === "pro") socialUser.is_premium = true;
-      if (finalSub.plan === "pro") socialUser.is_pro = true;
-      savePersistentSubscription(cleanEmail, finalSub);
-    }
-
-    // 4. Set the authenticated user state
-    setUser(socialUser);
-    localStorage.setItem("dukaan_user", JSON.stringify(socialUser));
-
-    if (!localStorage.getItem("dukaan_access_token")) {
-      try {
-        const fallbackToken = "duk_" + btoa(unescape(encodeURIComponent(JSON.stringify(socialUser))));
-        localStorage.setItem("dukaan_access_token", fallbackToken);
-      } catch {}
-    }
-
-    // 4. Setup merchant store for this specific Google user, reusing existing configuration if available
-    const merchantShopId = `shop_${cleanEmail.replace(/[^a-zA-Z0-9]/g, "_")}`;
-    let savedShops = [];
-    try {
-      savedShops = JSON.parse(localStorage.getItem("dukaan_shops") || "[]");
-    } catch {}
-
-    let merchantShop = savedShops.find(s => s.id === merchantShopId || s.owner_email === cleanEmail);
-    if (!merchantShop) {
-      merchantShop = {
-        id: merchantShopId,
-        owner_email: cleanEmail,
-        name: `${cleanName}'s Store`,
-        owner_name: cleanName,
-        phone: "",
-        address: "India",
-        upi_id: "",
-        store_category: "General Store",
-        gst_status: "pending",
-        gst_enabled: false,
-        financial_year: "2026-27",
-        store_active: true,
+      await loadShops(socialUser.default_shop_id);
+      return { ok: true, user: socialUser };
+    } catch (err) {
+      return {
+        ok: false,
+        error: formatApiError(err.response?.data?.detail) || "Social authentication failed."
       };
-      savedShops.push(merchantShop);
-      localStorage.setItem("dukaan_shops", JSON.stringify(savedShops));
     }
-    setShops([merchantShop]);
-    setActiveShop(merchantShop.id);
-
-    return { ok: true, user: socialUser };
   };
 
   const updateProfile = async ({ name, phone, avatar }) => {
@@ -793,38 +700,18 @@ export function AuthProvider({ children }) {
     if (!newPassword || newPassword.length < 8) {
       return { ok: false, error: "New password must be at least 8 characters long." };
     }
-    if (!/[A-Z]/.test(newPassword)) {
-      return { ok: false, error: "New password must contain at least one capital letter (A-Z)." };
+    if (!/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword) || !/[!@#$%^&*(),.?":{}|<>\-_+=\[\]\\/\`~]/.test(newPassword)) {
+      return { ok: false, error: "Password must contain at least one capital letter, number, and special symbol." };
     }
-    if (!/[0-9]/.test(newPassword)) {
-      return { ok: false, error: "New password must contain at least one number (0-9)." };
-    }
-    if (!/[!@#$%^&*(),.?":{}|<>\-_+=\[\]\\/`~]/.test(newPassword)) {
-      return { ok: false, error: "New password must contain at least one special symbol (!@#$%...)." };
-    }
-
-    const cleanEmail = (user?.email || "").toLowerCase();
-    let regUsers = [];
     try {
-      regUsers = JSON.parse(localStorage.getItem("dukaan_registered_users") || "[]");
-    } catch {}
-
-    const idx = regUsers.findIndex(u => u.email && u.email.toLowerCase() === cleanEmail);
-    if (idx >= 0) {
-      if (regUsers[idx].password && regUsers[idx].password !== currentPassword) {
-        return { ok: false, error: "Current password is incorrect." };
-      }
-      regUsers[idx].password = newPassword;
-      localStorage.setItem("dukaan_registered_users", JSON.stringify(regUsers));
-    }
-
-    try {
-      await api.post("/auth/change-password", { current_password: currentPassword, new_password: newPassword });
+      await api.post("/auth/change-password", {
+        current_password: currentPassword,
+        new_password: newPassword
+      });
+      return { ok: true, message: "Password updated successfully!" };
     } catch (e) {
-      console.warn("Backend change-password offline fallback:", e);
+      return { ok: false, error: formatApiError(e.response?.data?.detail) || "Unable to update password." };
     }
-
-    return { ok: true, message: "Password updated successfully!" };
   };
 
   const loginWithGoogle = (payload) => loginWithSocial({ ...payload, provider: "google" });
