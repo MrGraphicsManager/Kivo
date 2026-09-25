@@ -52,23 +52,6 @@ export default function ResetPassword() {
       toast.success("Password reset successfully! You can now log in.");
       nav("/login");
     } catch (e) {
-      // Local fallback check
-      try {
-        let resets = JSON.parse(localStorage.getItem("dukaan_password_resets") || "[]");
-        const match = resets.find(r => 
-          (token && r.token === token) || 
-          (!token && r.email?.toLowerCase() === email.trim().toLowerCase() && String(r.code) === code.trim())
-        );
-        if (match && match.expires_at > Date.now()) {
-          let regUsers = JSON.parse(localStorage.getItem("dukaan_registered_users") || "[]");
-          regUsers = regUsers.map(u => u.email.toLowerCase() === match.email.toLowerCase() ? { ...u, password: pw } : u);
-          localStorage.setItem("dukaan_registered_users", JSON.stringify(regUsers));
-          toast.success("Password reset successfully! You can now log in.");
-          nav("/login");
-          return;
-        }
-      } catch {}
-
       setErr(formatApiError(e.response?.data?.detail) || "Invalid or expired reset code. Please request a new one.");
     } finally { 
       setBusy(false); 
