@@ -1,5 +1,23 @@
 const tls = require("tls");
 const crypto = require("crypto");
+
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const derived = crypto.scryptSync(String(password), salt, 64).toString("hex");
+  return "scrypt$" + salt + "$" + derived;
+}
+
+function verifyPassword(password, encoded) {
+  try {
+    const [scheme, salt, expectedHex] = String(encoded || "").split("$");
+    if (scheme !== "scrypt" || !salt || !expectedHex) return false;
+    const actual = crypto.scryptSync(String(password), salt, 64);
+    const expected = Buffer.from(expectedHex, "hex");
+    return expected.length === actual.length && crypto.timingSafeEqual(actual, expected);
+  } catch (_) {
+    return false;
+  }
+}
 const https = require("https");
 const http = require("http");
 
@@ -994,7 +1012,7 @@ function parseToken(authHeader) {
 exports.handler = async (event, context) => {
   // CORS & Anti-Caching Headers (Ensures real-time updates across browsers)
   const headers = {
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": process.env.FRONTEND_URL || "https://officialdukaan.in",
     "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Shop-Id, X-User-Email, Cache-Control, Pragma",
     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
     "Content-Type": "application/json",
@@ -1027,7 +1045,7 @@ exports.handler = async (event, context) => {
       return {
         statusCode: 200,
         headers,
-        body: JSON.stringify({ ok: true, status: "healthy", service: "Official Dukaan Serverless API" })
+        body: JSON.stringify({ ok: true, status: "healthy", service: "Kivo Serverless API" })
       };
     }
 
@@ -1118,6 +1136,7 @@ exports.handler = async (event, context) => {
         is_verified: false,
         role: "owner",
         store_name: body.cafe_name || `${name || email.split("@")[0]}'s Café`,
+        password_hash: hashPassword(password),
         verification_code,
         verification_token,
         subscription: null
@@ -1179,6 +1198,12 @@ exports.handler = async (event, context) => {
       }
 
       const existingReg = registeredUsersList.find(u => u.email && u.email.toLowerCase() === email);
+      if (!existingReg) {
+        return { statusCode: 404, headers, body: JSON.stringify({ detail: "No account found with this email. Please create an account." }) };
+      }
+      if (!verifyPassword(password, existingReg.password_hash)) {
+        return { statusCode: 401, headers, body: JSON.stringify({ detail: "Incorrect password. Please try again." }) };
+      }
       const granted = globalPlatformConfig.granted_subscriptions?.[email];
       const isFrozen = !!globalPlatformConfig.frozen_merchants?.[email];
       const isVerified = globalPlatformConfig.verified_merchants?.[email] !== undefined 
@@ -1340,9 +1365,8 @@ exports.handler = async (event, context) => {
       if (!reg) {
         return { statusCode: 404, headers, body: JSON.stringify({ detail: "Account not found." }) };
       }
-      // The legacy serverless store currently authenticates against the stored plaintext password
-      // for existing accounts. Do not introduce a misleading password_hash field here.
-      reg.password = new_password;
+      reg.password_hash = hashPassword(new_password);
+      delete reg.password;
       delete globalPlatformConfig.password_resets[cleanEmail];
       await savePersistentState();
 
@@ -1355,15 +1379,17 @@ exports.handler = async (event, context) => {
 
     // 2C. CHANGE PASSWORD
     if (path === "/auth/change-password" && event.httpMethod === "POST") {
-      const { new_password } = body;
-      if (!new_password || new_password.length < 8) {
-        return { statusCode: 400, headers, body: JSON.stringify({ detail: "Password must be at least 8 characters." }) };
-      }
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({ ok: true, message: "Password updated successfully!" })
-      };
+      const authHeader = event.headers.authorization || event.headers.Authorization || "";
+      const user = parseToken(authHeader);
+      const newPassword = String(body.new_password || "");
+      if (!user?.email) return { statusCode: 401, headers, body: JSON.stringify({ detail: "Authentication required." }) };
+      if (newPassword.length < 8) return { statusCode: 400, headers, body: JSON.stringify({ detail: "Password must be at least 8 characters." }) };
+      const reg = registeredUsersList.find(u => u.email && u.email.toLowerCase() === user.email.toLowerCase());
+      if (!reg) return { statusCode: 404, headers, body: JSON.stringify({ detail: "Account not found." }) };
+      reg.password_hash = hashPassword(newPassword);
+      delete reg.password;
+      await savePersistentState();
+      return { statusCode: 200, headers, body: JSON.stringify({ ok: true, message: "Password updated successfully." }) };
     }
 
     // 2D. UPDATE PROFILE
