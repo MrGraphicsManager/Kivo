@@ -4,7 +4,7 @@
 @tailwind components;
 @tailwind utilities;
 
-body{margin:0;font-family:'Inter',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;background:#F8FAFC;color:#0A1B39}
+html,body,#root{max-width:100%;overflow-x:hidden;}body{margin:0;font-family:'Inter',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;background:#F8FAFC;color:#0A1B39}
 @layer base{ 
   :root{--background:210 50% 98%;--foreground:222 47% 11%;--card:0 0% 100%;--card-foreground:222 47% 11%;--popover:0 0% 100%;--popover-foreground:222 47% 11%;--primary:217 100% 50%;--primary-foreground:0 0% 100%;--secondary:222 47% 11%;--secondary-foreground:0 0% 100%;--muted:214 32% 91%;--muted-foreground:215 16% 47%;--accent:217 91% 60%;--accent-foreground:0 0% 100%;--destructive:0 84% 60%;--destructive-foreground:0 0% 100%;--border:214 32% 91%;--input:214 32% 91%;--ring:217 100% 50%;--radius:.75rem;--chart-1:217 100% 50%;--chart-2:222 47% 11%;--chart-3:158 46% 33%;--chart-4:217 91% 60%;--chart-5:224 76% 48%}
   .dark {
