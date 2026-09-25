@@ -70,11 +70,11 @@ function safeHttpPost(urlStr, data, extraHeaders = {}, timeoutMs = 4000) {
 const SMTP_HOST = process.env.SMTP_HOST || "smtpout.secureserver.net";
 const SMTP_PORT = parseInt(process.env.SMTP_PORT || "465", 10);
 const SMTP_USER = process.env.SMTP_USER || "contact@officialdukaan.in";
-const SMTP_PASSWORD = process.env.SMTP_PASSWORD || "Viral@1979";
+const SMTP_PASSWORD = process.env.SMTP_PASSWORD || "";
 const EMAIL_FROM = "Dukaan <contact@officialdukaan.in>";
 const FRONTEND_URL = process.env.FRONTEND_URL || "https://officialdukaan.in";
 const ADMIN_EMAIL = "contact@officialdukaan.in";
-const FAST2SMS_API_KEY = process.env.FAST2SMS_API_KEY || "GIOQb04y6APlfFpwiX7HUaNuoS8z3hm5JM1ZTKE9LktRdW2rxngw0zPfhmLytUAjMR7pVk4QJWosuC6b";
+const FAST2SMS_API_KEY = process.env.FAST2SMS_API_KEY || "";
 
 // Global Platform Configuration (Enterprise Suite Features)
 let globalPlatformConfig = {
@@ -1169,7 +1169,7 @@ exports.handler = async (event, context) => {
         return { statusCode: 400, headers, body: JSON.stringify({ detail: "Email and password are required." }) };
       }
       const isAdmin = email.toLowerCase() === ADMIN_EMAIL;
-      if (isAdmin && password !== "Viral@1979") {
+      if (isAdmin) {\n        const adminPassword = process.env.ADMIN_PASSWORD || "";\n        if (!adminPassword || password !== adminPassword) {
         return { statusCode: 401, headers, body: JSON.stringify({ detail: "Incorrect admin password. Please try again." }) };
       }
 
