@@ -1155,8 +1155,6 @@ exports.handler = async (event, context) => {
           ok: true,
           need_verification: true,
           email,
-          verification_code,
-          verification_token,
           message: "Account created! A verification code has been sent to your email.",
           user: newRegUser
         })
