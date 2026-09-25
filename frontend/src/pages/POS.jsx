@@ -60,7 +60,6 @@ import VoiceBillingModal from "@/components/pos/VoiceBillingModal";
 import CustomerDisplayModal from "@/components/pos/CustomerDisplayModal";
 import SplitPaymentModal from "@/components/pos/SplitPaymentModal";
 import { getStoredProducts, saveStoredProducts } from "@/lib/defaultProducts";
-import { getStoredCustomers, saveStoredCustomers } from "@/pages/Customers";
 import { useAuth } from "@/lib/AuthContext";
 import { getProThemeSettings } from "@/lib/proCustomizations";
 import { 
@@ -664,51 +663,29 @@ export default function POS() {
     setCustomerId("");
   };
 
-  const createCustomer = () => {
+  const createCustomer = async () => {
     if (!newCustomer.name.trim()) {
       toast.error("Customer name is required");
       return;
     }
-    const newC = {
-      id: `c_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-      name: newCustomer.name.trim(),
-      phone: newCustomer.phone.trim(),
-      notes: "Added from POS",
-      total_purchases: 0,
-      totalSpent: 0,
-      total_paid: 0,
-      total_pending: 0,
-      udhaar: 0,
-      created_at: new Date().toISOString()
-    };
 
-    let stored = [];
     try {
-      stored = JSON.parse(localStorage.getItem("dukaan_customers") || "[]");
-    } catch {}
-    const updated = [newC, ...stored];
-    saveStoredCustomers(updated);
+      const res = await api.post("/customers", {
+        name: newCustomer.name.trim(),
+        phone: newCustomer.phone.trim(),
+        notes: "Added from POS"
+      });
+      const created = res?.data;
+      if (!created?.id) throw new Error("Customer was not created");
 
-    setCustomers(prev => [newC, ...prev]);
-    setCustomerId(newC.id);
-    setNewCustomer({ open: false, name: "", phone: "" });
-    toast.success(`⚡ Customer "${newC.name}" added and selected!`);
-
-    api.post("/customers", newC).then(res => {
-      if (res?.data?.id) {
-        newC.id = res.data.id;
-        try {
-          const cur = JSON.parse(localStorage.getItem("dukaan_customers") || "[]");
-          const idx = cur.findIndex(c => c.phone === newC.phone || c.id === newC.id);
-          if (idx !== -1) {
-            cur[idx].id = res.data.id;
-            saveStoredCustomers(cur);
-          }
-        } catch {}
-      }
-    }).catch(() => {});
+      setCustomers(prev => [created, ...prev.filter(c => c.id !== created.id)]);
+      setCustomerId(created.id);
+      setNewCustomer({ open: false, name: "", phone: "" });
+      toast.success(`Customer "${created.name}" added and selected!`);
+    } catch (error) {
+      toast.error(error?.response?.data?.detail || "Unable to create customer");
+    }
   };
-
   // Pricing math
   const subtotal = cart.reduce((acc, it) => acc + (it.price * it.qty), 0);
   const discountAmount = discountType === "percent" 
@@ -720,49 +697,8 @@ export default function POS() {
   // Selected customer details
   const selectedCustomerObj = customers.find(c => c.id === customerId);
 
-  const deductStockAndSync = (cartItems) => {
-    const currentProds = getStoredProducts();
-    const updated = currentProds.map(p => {
-      const item = cartItems.find(ci => ci.product_id === p.id);
-      if (item && !p.unlimited_stock) {
-        const newStock = Math.max(0, Number(p.stock || 0) - Number(item.qty || 0));
-        return { ...p, stock: newStock };
-      }
-      return p;
-    });
-    saveStoredProducts(updated);
-    setProducts(updated);
-  };
-
-  const updateCustomerLedger = (orderData) => {
-    if (!selectedCustomerObj && !customerId) return;
-    try {
-      const stored = JSON.parse(localStorage.getItem("dukaan_customers") || "[]");
-      const cId = customerId || selectedCustomerObj?.id;
-      const updated = stored.map(c => {
-        if (c.id === cId || (orderData.customer_phone && c.phone === orderData.customer_phone)) {
-          const tot = Number(orderData.total || 0);
-          const isUdhaar = orderData.payment_method === "udhaar";
-          const newPending = Number(c.total_pending || c.udhaar || 0) + (isUdhaar ? tot : 0);
-          const newPurchases = Number(c.total_purchases || c.totalSpent || 0) + tot;
-          return {
-            ...c,
-            total_purchases: newPurchases,
-            totalSpent: newPurchases,
-            total_paid: Number(c.total_paid || 0) + (isUdhaar ? 0 : tot),
-            total_pending: newPending,
-            udhaar: newPending,
-            updated_at: new Date().toISOString()
-          };
-        }
-        return c;
-      });
-      saveStoredCustomers(updated);
-    } catch {}
-  };
-
-  // Bill submission (0.001s instant save)
-  const handleCompleteBill = () => {
+  // Server-authoritative checkout
+  const handleCompleteBill = async () => {
     if (cart.length === 0) {
       toast.error("Cart is empty");
       return;
@@ -771,96 +707,67 @@ export default function POS() {
       toast.error("Please select a customer for Udhaar");
       return;
     }
-
-    const orderId = `ord_${Date.now()}`;
-    const orderNo = `OD-${Date.now().toString().slice(-4)}`;
-    const now = new Date();
-
-    const order = {
-      id: orderId,
-      order_no: orderNo,
-      total,
-      subtotal,
-      discount: discountAmount,
-      payment_method: method,
-      status: method === "udhaar" ? "udhaar" : "paid",
-      pending_amount: method === "udhaar" ? total : 0,
-      paid_amount: method === "udhaar" ? 0 : total,
-      customer_id: customerId || null,
-      customer_name: selectedCustomerObj?.name || "Walk-in Customer",
-      customer_phone: selectedCustomerObj?.phone || "",
-      created_at: now.toISOString(),
-      items: cart,
-      change: method === "cash" && Number(amountReceived) > total ? Number(amountReceived) - total : 0,
-      billed_by: activeCashierName
-    };
-
-    const billData = {
-      order_no: orderNo,
-      id: orderId,
-      total,
-      payment_method: method,
-      items: cart,
-      customer_name: selectedCustomerObj?.name || "Walk-in Customer",
-      customer_phone: selectedCustomerObj?.phone || "",
-      change: order.change,
-      billed_by: activeCashierName
-    };
-
-    // ⚡ STEP 1: INSTANT LOCAL SAVE IN 0.001 SEC
-    const savedOrders = JSON.parse(localStorage.getItem("dukaan_orders") || "[]");
-    const updatedOrders = [order, ...savedOrders];
-    localStorage.setItem("dukaan_orders", JSON.stringify(updatedOrders));
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("dukaan_orders_updated", { detail: updatedOrders }));
+    if (method === "cash" && Number(amountReceived || 0) < total) {
+      toast.error("Amount received cannot be less than the bill total");
+      return;
     }
 
-    // Deduct purchased items from stock immediately
-    deductStockAndSync(cart);
-    // Update customer ledger immediately
-    updateCustomerLedger(order);
+    setBusy(true);
+    try {
+      const payload = {
+        items: cart.map(item => ({
+          product_id: item.product_id,
+          name: item.name,
+          price: Number(item.price || 0),
+          qty: Number(item.qty || 0)
+        })),
+        discount: Number(discountAmount || 0),
+        customer_id: customerId || null,
+        payment_method: method,
+        amount_received: method === "cash" ? Number(amountReceived || total) : null,
+        note: orderNote || ""
+      };
 
-    setPayOpen(false);
-    setCompletedBill(billData);
-    setWaPhone(selectedCustomerObj?.phone || "");
+      const res = await api.post("/orders", payload);
+      const serverOrder = res?.data;
+      if (!serverOrder?.id) throw new Error("Server did not return an order");
 
-    toast.success(`⚡ Bill #${orderNo} created successfully!`);
+      const billData = {
+        ...serverOrder,
+        order_no: serverOrder.order_no || `OD-${String(serverOrder.id).slice(-4)}`,
+        items: cart,
+        total: Number(serverOrder.total ?? total),
+        payment_method: method,
+        customer_name: selectedCustomerObj?.name || "Walk-in Customer",
+        customer_phone: selectedCustomerObj?.phone || "",
+        change: method === "cash" ? Math.max(0, Number(amountReceived || 0) - total) : 0,
+        billed_by: activeCashierName
+      };
 
-    // Soundbox voice announcement (Premium only)
-    const isChimeMuted = localStorage.getItem("dukaan_payment_alert_chime") === "false";
-    if (soundboxEnabled && isPremium && !isChimeMuted) {
-      playVoiceSoundbox(total, method, lang);
-    }
+      setPayOpen(false);
+      setCompletedBill(billData);
+      setWaPhone(selectedCustomerObj?.phone || "");
+      setProducts(prev => prev.map(p => {
+        const item = cart.find(ci => ci.product_id === p.id);
+        if (!item || p.unlimited_stock) return p;
+        return { ...p, stock: Math.max(0, Number(p.stock || 0) - Number(item.qty || 0)) };
+      }));
 
-    // Auto-reset after 6 seconds for next customer
-    const timer = setTimeout(() => {
-      setCompletedBill(null);
-      clearCart();
-    }, 6000);
-    setAutoResetTimer(timer);
-
-    // ⚡ STEP 2: ASYNC SERVER SYNC (FIRE-AND-FORGET)
-    const payload = {
-      items: cart,
-      discount: Number(discountAmount || 0),
-      customer_id: customerId || null,
-      payment_method: method,
-      amount_received: method === "cash" ? Number(amountReceived || total) : null,
-    };
-
-    api.post("/orders", payload).then(res => {
-      if (res?.data?.id) {
-        try {
-          const list = JSON.parse(localStorage.getItem("dukaan_orders") || "[]");
-          const idx = list.findIndex(o => o.id === orderId);
-          if (idx !== -1) {
-            list[idx].id = res.data.id;
-            if (res.data.order_no) list[idx].order_no = res.data.order_no;
-            localStorage.setItem("dukaan_orders", JSON.stringify(list));
-          }
-        } catch {}
+      toast.success(`Bill #${billData.order_no} created successfully!`);
+      if (soundboxEnabled && isPremium && localStorage.getItem("dukaan_payment_alert_chime") !== "false") {
+        playVoiceSoundbox(billData.total, method, lang);
       }
-    }).catch(() => {});
+
+      const timer = setTimeout(() => {
+        setCompletedBill(null);
+        clearCart();
+      }, 6000);
+      setAutoResetTimer(timer);
+    } catch (error) {
+      toast.error(error?.response?.data?.detail || "Unable to create bill. Nothing was charged.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   // Dukaan 3.0 Split Payment Processor
@@ -887,53 +794,11 @@ export default function POS() {
       paid_amount: (split.cash || 0) + (split.upi || 0) + (split.card || 0),
       customer_id: split.khata_customer_id || customerId || null,
       customer_name: selectedCustomerObj?.name || "Split Payment Customer",
-      customer_phone: selectedCustomerObj?.phone || "",
-      created_at: now.toISOString(),
-      items: cart,
-      change: split.change_due || 0,
-      billed_by: activeCashierName
-    };
-
-    const billData = {
-      order_no: orderNo,
-      id: orderId,
-      total,
-      payment_method: "split",
-      items: cart,
-      customer_name: selectedCustomerObj?.name || "Split Payment Customer",
-      customer_phone: selectedCustomerObj?.phone || "",
-      change: split.change_due || 0,
-      billed_by: activeCashierName
-    };
-
-    const savedOrders = JSON.parse(localStorage.getItem("dukaan_orders") || "[]");
-    const updatedOrders = [order, ...savedOrders];
-    localStorage.setItem("dukaan_orders", JSON.stringify(updatedOrders));
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("dukaan_orders_updated", { detail: updatedOrders }));
-    }
-
-    deductStockAndSync(cart);
-    updateCustomerLedger(order);
-
-    if (playAudioChime) playAudioChime("success");
-    setCompletedBill(billData);
-    setWaPhone(selectedCustomerObj?.phone || "");
-
-    toast.success(`⚡ Split Bill #${orderNo} created successfully!`);
-
-    const isChimeMuted = localStorage.getItem("dukaan_payment_alert_chime") === "false";
-    if (soundboxEnabled && isPremium && !isChimeMuted) {
-      playVoiceSoundbox(total, "split", lang);
-    }
-
-    const timer = setTimeout(() => {
-      setCompletedBill(null);
-      clearCart();
-    }, 6000);
-    setAutoResetTimer(timer);
-
-    api.post("/orders", order).catch(() => {});
+      customer_phone: selectedCustomerObj  // Split payment is not persisted locally. Until the backend supports split tender atomically,
+  // route the user through the standard server-authoritative checkout instead.
+  const handleSplitPaymentConfirm = () => {
+    setSplitPaymentOpen(false);
+    toast.error("Split payment is temporarily unavailable. Use Cash, UPI, or Udhaar.");
   };
 
   const handleSendWhatsAppBill = (billToShare) => {
