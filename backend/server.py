@@ -655,14 +655,100 @@ async def register(body: RegisterIn, response: Response):
     }
 
 @api.post("/auth/social-login")
-async def social_login():
-    # Client-supplied email/name is not an authentication proof. Social login must
-    # be completed through a provider-verified OAuth/OIDC flow before an account
-    # session is issued.
-    raise HTTPException(
-        status_code=501,
-        detail="Social login is temporarily unavailable until provider-side OAuth/OIDC token verification is enabled."
-    )
+async def social_login(body: dict, response: Response):
+    provider = str(body.get("provider", "google")).lower().strip()
+    if provider != "google":
+        raise HTTPException(status_code=501, detail="This social provider is not configured for verified sign-in.")
+
+    id_token = str(body.get("id_token") or body.get("credential") or "").strip()
+    google_client_id = os.environ.get("GOOGLE_CLIENT_ID", "").strip()
+    if not id_token or not google_client_id:
+        raise HTTPException(status_code=503, detail="Google sign-in is not configured.")
+
+    try:
+        async with httpx.AsyncClient(timeout=5) as http:
+            r = await http.get(
+                "https://oauth2.googleapis.com/tokeninfo",
+                params={"id_token": id_token},
+            )
+        if r.status_code != 200:
+            raise HTTPException(status_code=401, detail="Invalid Google identity token.")
+        claims = r.json()
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=502, detail="Unable to verify Google identity.")
+
+    if (
+        claims.get("aud") != google_client_id
+        or claims.get("iss") != "https://accounts.google.com"
+        or str(claims.get("email_verified", "")).lower() != "true"
+    ):
+        raise HTTPException(status_code=401, detail="Google identity verification failed.")
+
+    email = str(claims.get("email", "")).strip().lower()
+    if not email:
+        raise HTTPException(status_code=400, detail="Google account email is unavailable.")
+
+    name = str(claims.get("name") or body.get("name") or email.split("@")[0]).strip()
+    avatar = str(claims.get("picture") or "").strip()
+    user = await db.users.find_one({"email": email})
+    now = now_iso()
+
+    if not user:
+        doc = {
+            "name": name,
+            "email": email,
+            "password_hash": "",
+            "is_admin": email == ADMIN_EMAIL,
+            "is_verified": True,
+            "email_verified": True,
+            "phone_verified": False,
+            "provider": "google",
+            "avatar": avatar,
+            "created_at": now,
+        }
+        res = await db.users.insert_one(doc)
+        user = await db.users.find_one({"_id": res.inserted_id})
+        await db.shops.insert_one({
+            "name": name + "'s Shop",
+            "owner_id": str(res.inserted_id),
+            "owner_name": name,
+            "phone": "",
+            "address": "",
+            "contact_email": email,
+            "store_category": "",
+            "gst_status": "not_submitted",
+            "gst_enabled": False,
+            "gst_rate": 0,
+            "financial_year": "2026-27",
+            "store_active": True,
+            "created_at": now,
+        })
+    else:
+        await db.users.update_one(
+            {"_id": user["_id"]},
+            {"$set": {"is_verified": True, "email_verified": True, "provider": "google", "avatar": avatar or user.get("avatar", "")}},
+        )
+        user = await db.users.find_one({"_id": user["_id"]})
+
+    uid = str(user["_id"])
+    token = create_access_token(uid, email)
+    _set_cookie(response, token)
+    return {
+        "ok": True,
+        "access_token": token,
+        "token_type": "bearer",
+        "user": {
+            "id": uid,
+            "name": user.get("name", name),
+            "email": email,
+            "avatar": user.get("avatar", avatar),
+            "is_verified": True,
+            "email_verified": True,
+            "is_admin": bool(user.get("is_admin")) and email == ADMIN_EMAIL,
+        },
+    }
 
 @api.post("/auth/verify-email")
 async def verify_email(body: dict, response: Response):
