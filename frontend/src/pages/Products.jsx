@@ -155,6 +155,11 @@ export default function Products() {
   const [fmcgModalOpen, setFmcgModalOpen] = useState(false);
   const [fmcgSearch, setFmcgSearch] = useState("");
   const [syncingBranches, setSyncingBranches] = useState(false);
+  const loadProducts = React.useCallback(() => {
+    api.get("/products", { params: { q: q || undefined, category } })
+      .then(r => setItems(Array.isArray(r.data) ? r.data : []))
+      .catch(() => setItems([]));
+  }, [loadProducts]);
 
   const handleBarcodeLookup = (code) => {
     if (!code) return;
@@ -190,19 +195,11 @@ export default function Products() {
       await loadProducts(); toast.success(`⚡ Added "${fmcgItem.name}" to inventory!`);
     } catch (err) { toast.error(err?.response?.data?.detail || "Failed to add product"); }
   };
-  const loadProducts = () => {
-    api.get("/products", { params: { q: q || undefined, category } })
-      .then(r => setItems(Array.isArray(r.data) ? r.data : []))
-      .catch(() => setItems([]));
-  };
-
   useEffect(() => {
     loadProducts();
     /* eslint-disable-next-line */
   }, [q, category]);
 
-  useEffect(() => {
-  }, []);
 
   const allCategories = useMemo(() => {
     const set = new Set(DEFAULT_CATEGORIES);
