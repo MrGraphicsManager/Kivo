@@ -1631,8 +1631,7 @@ exports.handler = async (event, context) => {
       const expectedToken = storedVerif?.token || matchedUser?.verification_token;
 
       const isMatch = Boolean(
-        inputCode === "123456" ||
-        (expectedCode && inputCode === String(expectedCode).trim()) || 
+        (expectedCode && inputCode === String(expectedCode).trim()) ||
         (expectedToken && inputCode === String(expectedToken).trim())
       );
 
