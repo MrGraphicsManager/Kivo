@@ -1411,7 +1411,9 @@ exports.handler = async (event, context) => {
       if (!reg) {
         return { statusCode: 404, headers, body: JSON.stringify({ detail: "Account not found." }) };
       }
-      reg.password_hash = require("crypto").createHash("sha256").update(new_password).digest("hex");
+      // The legacy serverless store currently authenticates against the stored plaintext password
+      // for existing accounts. Do not introduce a misleading password_hash field here.
+      reg.password = new_password;
       delete globalPlatformConfig.password_resets[cleanEmail];
       await savePersistentState();
 
