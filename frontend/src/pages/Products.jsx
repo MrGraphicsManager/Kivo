@@ -331,15 +331,6 @@ export default function Products() {
     }
   };
 
-  const performDeleteProduct = (p) => {
-    const currentStored = getStoredProducts();
-    const updated = currentStored.filter(item => item.id !== p.id);
-    saveStoredProducts(updated);
-    setItems(updated);
-    toast.success(`Deleted ${p.name}`);
-    api.delete(`/products/${p.id}`).catch(() => {});
-  };
-
   const performDeleteProduct = async (p) => {
     try {
       await api.delete(`/products/${p.id}`);
