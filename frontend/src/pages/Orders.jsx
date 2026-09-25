@@ -26,21 +26,9 @@ export default function Orders() {
   const [q, setQ] = useState("");
 
   const load = () => {
-    let localOrders = [];
-    try {
-      localOrders = JSON.parse(localStorage.getItem("dukaan_orders") || "[]");
-    } catch {}
-
     api.get("/orders", { params: { status, payment_method: payment, q: q || undefined } })
-      .then(r => {
-        if (Array.isArray(r.data) && r.data.length > 0) {
-          setOrders(r.data);
-          try { localStorage.setItem("dukaan_orders", JSON.stringify(r.data)); } catch (_) {}
-        } else {
-          setOrders(localOrders);
-        }
-      })
-      .catch(() => setOrders(localOrders));
+      .then(r => setOrders(Array.isArray(r.data) ? r.data : []))
+      .catch(() => setOrders([]));
   };
 
   useEffect(() => { 
