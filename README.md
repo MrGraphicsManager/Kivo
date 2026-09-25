@@ -30,7 +30,6 @@ A flagship venture engineered under the **PEAN** technology studio.
 
 ### 2. 🔄 Real-Time Distributed Terminal Synchronization
 - **Server-Sent Events (SSE) & ntfy.sh Event Bus:** Multiple counter tablets, barcode scanners, and back-office inventory dashboards synchronize state in real time without heavy polling.
-- **Zero-Refresh Updates:** Store announcements, maintenance locks, and catalog adjustments propagate instantly across all active merchant sessions.
 
 ### 3. 🖨️ Native ESC/POS Thermal Receipt Engine
 - **58mm & 80mm ESC/POS Standard:** Direct browser-based spooler formatting clean monochrome receipts with dashed line separators and barcode numbers.
@@ -56,32 +55,43 @@ A flagship venture engineered under the **PEAN** technology studio.
 
 | Domain | Technologies |
 | :--- | :--- |
-| **Frontend** | React 19, Create React App (CRACO), Tailwind CSS, Lucide React, Framer Motion |
-| **Backend / API** | FastAPI + Netlify/Vercel serverless API routes, REST APIs |
-| **Database & Cache** | MongoDB (FastAPI backend) + serverless sync/persistence |
-| **Hardware / Protocol** | ESC/POS Thermal Printing, Webhooks, WhatsApp API |
-| **Tooling & Build** | Craco, PostCSS, ESLint, Git & GitHub |
+| **Frontend** | React, Create React App (CRACO), Tailwind CSS, Lucide React, Framer Motion |
+| **Backend / API** | FastAPI, REST API, Vercel/Netlify proxy |
+| **Database** | MongoDB + Motor |
+| **Payments** | Razorpay |
+| **Email / Notifications** | Configurable email provider + WhatsApp integration |
+| **Tooling & Build** | Node.js, npm, Git & GitHub |
 
 ---
 
 ## 🏗️ System Architecture
 
 ```
-[ Barcode Scanner / F1-F6 Counter ]
-               │
-               ▼
-   [ Kivo POS Client (React 18) ]
-   ├── Client-side Cart & Tax Calculation (client-side optimistic updates)
-   ├── Local-first Cache & Offline Storage
-   └── Responsive View Engine (Mobile Drawer / Desktop Grid)
-         │                   │                    │
-         ▼                   ▼                    ▼
-[ ESC/POS Spooler ]   [ WhatsApp API ]   [ SSE Event Bus (ntfy.sh) ]
-  • 58mm/80mm Paper     • Digital Memo     • Multi-device Store Sync
-  • Cut & Margin Test   • Udhaar Reminders • Instant Announcement Lock
+[ Browser / POS ]
+       │
+       ▼
+[ React + CRACO frontend ]
+       │
+       │ HTTPS / HttpOnly auth cookie
+       ▼
+[ Vercel / Netlify API proxy ]
+       │
+       ▼
+[ FastAPI ]
+       │
+       ├── Authentication & authorization
+       ├── Products / inventory
+       ├── Customers / Udhaar
+       ├── Orders / reports
+       └── Subscriptions / Razorpay
+       │
+       ▼
+[ MongoDB ]
+       │
+       └── Transactions for atomic checkout
 ```
 
----
+**Production source of truth:** FastAPI + MongoDB. Browser storage is not used as the authority for authentication, ownership, inventory, orders, customers, or subscriptions.
 
 ## 💻 Quick Start
 
