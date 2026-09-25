@@ -431,3 +431,262 @@ input,select,textarea{font-size:16px}
 
 
 
+
+
+/* =========================================================
+   KIVO 2026 — GLOBAL UI REFRESH
+   Clean merchant-first interface: crisp surfaces, stronger
+   hierarchy, restrained motion, mobile-first spacing.
+========================================================= */
+
+:root {
+  --kivo-bg: #f6f8fb;
+  --kivo-surface: #ffffff;
+  --kivo-surface-2: #f9fafb;
+  --kivo-ink: #101828;
+  --kivo-muted: #667085;
+  --kivo-border: #e4e7ec;
+  --kivo-brand: #2563eb;
+  --kivo-brand-dark: #1d4ed8;
+  --kivo-radius: 16px;
+}
+
+body {
+  background: var(--kivo-bg);
+  color: var(--kivo-ink);
+}
+
+button, a, input, select, textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, [role="button"] {
+  transition: background-color .18s ease, border-color .18s ease, color .18s ease,
+              box-shadow .18s ease, transform .18s ease;
+}
+
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 3px solid rgba(37,99,235,.20);
+  outline-offset: 2px;
+}
+
+/* Merchant shell */
+main {
+  background:
+    radial-gradient(circle at 85% 0%, rgba(37,99,235,.035), transparent 28rem),
+    var(--kivo-bg);
+}
+
+main > * {
+  max-width: 1440px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Cards */
+main .bg-white,
+main [class*="bg-white/"] {
+  border-color: var(--kivo-border);
+  border-radius: var(--kivo-radius);
+}
+
+main .shadow-sm {
+  box-shadow: 0 1px 2px rgba(16,24,40,.04), 0 8px 24px rgba(16,24,40,.035);
+}
+
+main .shadow-md,
+main .shadow-lg,
+main .shadow-xl {
+  box-shadow: 0 12px 32px rgba(16,24,40,.08);
+}
+
+/* Inputs / selects */
+main input:not([type="checkbox"]):not([type="radio"]),
+main select,
+main textarea {
+  min-height: 42px;
+  border-radius: 11px;
+  border-color: var(--kivo-border);
+  background: #fff;
+  color: var(--kivo-ink);
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+
+main input:not([type="checkbox"]):not([type="radio"]):focus,
+main select:focus,
+main textarea:focus {
+  border-color: #93b4ff !important;
+  box-shadow: 0 0 0 4px rgba(37,99,235,.09) !important;
+}
+
+/* Tables */
+main table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+
+main table thead th {
+  background: #f8fafc;
+  color: #667085;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+
+main table tbody tr {
+  transition: background-color .15s ease;
+}
+
+main table tbody tr:hover {
+  background: #f8fafc;
+}
+
+/* Buttons: less bulky, more deliberate */
+main button:not([aria-label="Close menu"]) {
+  border-radius: 11px;
+}
+
+main button.bg-brand-indigo,
+main button.bg-brand-terracotta,
+main button.bg-blue-600,
+main button.bg-blue-500 {
+  box-shadow: 0 5px 14px rgba(37,99,235,.16);
+}
+
+main button.bg-brand-indigo:hover,
+main button.bg-brand-terracotta:hover,
+main button.bg-blue-600:hover,
+main button.bg-blue-500:hover {
+  transform: translateY(-1px);
+}
+
+/* Sidebar / topbar refresh */
+aside {
+  box-shadow: 1px 0 0 var(--kivo-border);
+}
+
+header {
+  box-shadow: 0 1px 0 rgba(16,24,40,.05);
+}
+
+aside a,
+header button {
+  border-radius: 11px;
+}
+
+aside a:not([aria-current="page"]):hover {
+  background: #f2f4f7;
+}
+
+aside a[aria-current="page"] {
+  box-shadow: inset 3px 0 0 #2563eb;
+}
+
+/* Dialogs */
+[role="dialog"] {
+  border-radius: 20px !important;
+  box-shadow: 0 24px 70px rgba(16,24,40,.18) !important;
+}
+
+[data-radix-popper-content-wrapper] > * {
+  border-radius: 14px !important;
+  border-color: var(--kivo-border) !important;
+}
+
+/* Toasts */
+[data-sonner-toaster] [data-sonner-toast] {
+  border-radius: 14px !important;
+  box-shadow: 0 12px 30px rgba(16,24,40,.12) !important;
+}
+
+/* Mobile shell */
+@media (max-width: 767px) {
+  main {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    padding-top: 14px !important;
+  }
+
+  main > * {
+    width: 100%;
+  }
+
+  main h1 {
+    font-size: clamp(1.55rem, 7vw, 2rem);
+    line-height: 1.12;
+  }
+
+  main h2 {
+    font-size: clamp(1.25rem, 5.5vw, 1.6rem);
+  }
+
+  main .grid {
+    min-width: 0;
+  }
+
+  main table {
+    min-width: 680px;
+  }
+
+  main [class*="overflow-x-auto"] {
+    border-radius: 14px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  main button,
+  main a {
+    touch-action: manipulation;
+  }
+
+  aside {
+    box-shadow: none;
+  }
+}
+
+/* Dark refresh */
+html.dark body {
+  background: #080d18 !important;
+}
+
+html.dark main {
+  background:
+    radial-gradient(circle at 85% 0%, rgba(37,99,235,.08), transparent 28rem),
+    #080d18 !important;
+}
+
+html.dark main .bg-white {
+  background: #111827 !important;
+  border-color: #243044 !important;
+}
+
+html.dark main input:not([type="checkbox"]):not([type="radio"]),
+html.dark main select,
+html.dark main textarea {
+  background: #0f172a !important;
+  border-color: #2b3a50 !important;
+}
+
+html.dark main table thead th {
+  background: #0f172a !important;
+  color: #98a2b3 !important;
+}
+
+html.dark main table tbody tr:hover {
+  background: #172033 !important;
+}
+
+html.dark aside a:not([aria-current="page"]):hover {
+  background: #172033 !important;
+}
+
+/* Respect reduced-motion accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+}
