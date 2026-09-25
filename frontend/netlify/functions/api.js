@@ -1172,7 +1172,8 @@ exports.handler = async (event, context) => {
       if (isAdmin) {
         const adminPassword = process.env.ADMIN_PASSWORD || "";
         if (!adminPassword || password !== adminPassword) {
-        return { statusCode: 401, headers, body: JSON.stringify({ detail: "Incorrect admin password. Please try again." }) };
+          return { statusCode: 401, headers, body: JSON.stringify({ detail: "Incorrect admin password. Please try again." }) };
+        }
       }
 
       const existingReg = registeredUsersList.find(u => u.email && u.email.toLowerCase() === email);
