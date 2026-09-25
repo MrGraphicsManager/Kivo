@@ -1288,6 +1288,15 @@ async def _activate_verified_rzp_subscription(sub: dict, payment_id: str) -> dic
     if current.get("status") in ("active", "scheduled") and current.get("razorpay_payment_id") == payment_id:
         return clean(current)
 
+    # A Razorpay payment may finalize exactly one subscription record.
+    # Refuse replay/cross-order reuse of a payment id before changing state.
+    reused = await db.subscriptions.find_one({
+        "razorpay_payment_id": payment_id,
+        "_id": {"$ne": current["_id"]},
+    })
+    if reused:
+        raise HTTPException(409, "Payment has already been processed")
+
     now = datetime.now(timezone.utc)
     starts = _iso_dt(current.get("starts_at")) or now
     scheduled = starts > now + timedelta(seconds=1)
@@ -1330,7 +1339,9 @@ async def _finalize_razorpay_payment(order_id: str, payment_id: str, signature: 
     payment = await _rzp_call('GET',f"https://api.razorpay.com/v1/payments/{payment_id}")
     if payment.get('order_id') != order_id or int(payment.get('amount',0)) != int(float(sub['amount'])*100) or payment.get('currency') != 'INR':
         raise HTTPException(400,'Payment mismatch')
-    if payment.get('status') not in ('captured','authorized'):
+    # Subscription access is granted only after Razorpay confirms capture.
+    # An authorized-but-not-captured payment must not activate paid access.
+    if payment.get('status') != 'captured':
         raise HTTPException(400,f"Payment status is {payment.get('status','unknown')}")
 
     return await _activate_verified_rzp_subscription(sub, payment_id)
