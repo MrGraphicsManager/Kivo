@@ -45,7 +45,9 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ.get('DB_NAME', 'dukaan')]
 
 JWT_ALGORITHM = "HS256"
-JWT_SECRET = os.environ.get("JWT_SECRET", "dukaan_secret_jwt_key_2026")
+JWT_SECRET = os.environ.get("JWT_SECRET", "").strip()
+if not JWT_SECRET:
+    raise RuntimeError("JWT_SECRET must be configured in the environment; refusing to start with a default secret.")
 
 # Email Configuration (Supports Resend API, SMTP, or Emergent Relay)
 EMAIL_BASE_URL = os.environ.get("EMAIL_BASE_URL", "https://integrations.emergentagent.com")
@@ -62,9 +64,11 @@ RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "").strip()
 RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "").strip()
 RAZORPAY_WEBHOOK_SECRET = os.environ.get("RAZORPAY_WEBHOOK_SECRET", "").strip()
 SUBSCRIPTION_CRON_SECRET = os.environ.get("SUBSCRIPTION_CRON_SECRET", "").strip()
-origins = os.environ.get("CORS_ORIGINS", "*").split(",")
+origins = [origin.strip().rstrip("/") for origin in os.environ.get("CORS_ORIGINS", "").split(",") if origin.strip()]
+if not origins or "*" in origins:
+    raise RuntimeError("CORS_ORIGINS must explicitly list trusted frontend origins when credentials are enabled.")
 
-app = FastAPI(title="Dukaan API")
+app = FastAPI(title="Kivo API")
 api = APIRouter(prefix="/api")
 app.add_middleware(
     CORSMiddleware,
@@ -75,7 +79,7 @@ app.add_middleware(
 )
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("dukaan")
+logger = logging.getLogger("kivo")
 
 
 # =========================================================
@@ -124,12 +128,12 @@ def _set_cookie(resp: Response, token: str):
     )
 
 
-ADMIN_EMAIL = "contact@officialdukaan.in"
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "contact@officialdukaan.in").strip().lower()
 
 async def get_admin_user(request: Request) -> dict:
     user = await _get_current_user(request)
-    if (user.get("email") or "").lower() != ADMIN_EMAIL:
-        raise HTTPException(status_code=403, detail="Admin only. Only contact@officialdukaan.in is authorized.")
+    if not user.get("is_admin") or (user.get("email") or "").lower() != ADMIN_EMAIL:
+        raise HTTPException(status_code=403, detail="Admin access required.")
     return user
 
 
@@ -639,8 +643,6 @@ async def register(body: RegisterIn, response: Response):
         "ok": True,
         "need_verification": True,
         "email": email,
-        "verification_code": verification_code,
-        "verification_token": verification_token,
         "message": "Account created! A verification code has been sent to your email.",
         "user": {
             "id": uid,
@@ -818,9 +820,7 @@ async def resend_verification(body: dict):
         logger.warning(f"Failed to resend verification email: {e}")
 
     return {
-        "ok": True, 
-        "verification_code": verification_code,
-        "verification_token": verification_token,
+        "ok": True,
         "message": "Verification code resent successfully."
     }
 
@@ -829,23 +829,9 @@ async def login(body: LoginIn, response: Response):
     email = body.email.lower().strip()
     user = await db.users.find_one({"email": email})
     if not user:
-        if email == ADMIN_EMAIL and body.password == "Viral@1979":
-            now = datetime.now(timezone.utc).isoformat()
-            doc = {
-                "name": "Dukaan Admin",
-                "email": ADMIN_EMAIL,
-                "password_hash": hash_password(body.password),
-                "created_at": now,
-                "is_admin": True,
-                "is_verified": True
-            }
-            res = await db.users.insert_one(doc)
-            user = await db.users.find_one({"_id": res.inserted_id})
-        else:
-            raise HTTPException(404, "No account found with this email. Please create an account.")
+        raise HTTPException(404, "No account found with this email. Please create an account.")
 
-    is_admin_match = (email == ADMIN_EMAIL and body.password == "Viral@1979")
-    if not is_admin_match and not verify_password(body.password, user.get("password_hash", "")):
+    if not verify_password(body.password, user.get("password_hash", "")):
         raise HTTPException(401, "Incorrect password. Please try again.")
 
     is_verified = bool(user.get("is_verified", True))
@@ -921,8 +907,6 @@ async def forgot_password(body: dict):
 
     return {
         "ok": True,
-        "token": token,
-        "code": reset_code,
         "email": email,
         "message": "Password reset instructions sent to your email."
     }
