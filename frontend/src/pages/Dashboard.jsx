@@ -31,17 +31,6 @@ export default function Dashboard() {
 
   const activeShop = (shops || []).find(s => s?.id === currentShopId) || shops?.[0];
 
-  const getSafeOrders = useCallback(() => {
-    try {
-      const raw = localStorage.getItem("dukaan_orders");
-      if (!raw) return [];
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  }, []);
-
   const loadDashboard = useCallback(async () => {
     try {
       const [dashboardRes, ordersRes] = await Promise.all([
