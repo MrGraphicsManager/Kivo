@@ -55,26 +55,9 @@ export default function Customers() {
   const [busy, setBusy] = useState(false);
 
   const load = () => {
-    const local = getStoredCustomers();
     api.get("/customers", { params: { q: q || undefined } })
-      .then(r => {
-        const server = Array.isArray(r.data) ? r.data : [];
-        if (server.length === 0 && local.length > 0) {
-          setItems(local);
-          return;
-        }
-        const merged = [...server];
-        local.forEach(lc => {
-          if (!merged.some(m => (m.id && m.id === lc.id) || (m.phone && lc.phone && m.phone === lc.phone))) {
-            merged.push(lc);
-          }
-        });
-        saveStoredCustomers(merged);
-        setItems(merged);
-      })
-      .catch(() => {
-        setItems(local);
-      });
+      .then(r => setItems(Array.isArray(r.data) ? r.data : []))
+      .catch(() => setItems([]));
   };
 
   useEffect(() => {
