@@ -83,6 +83,28 @@ logger = logging.getLogger("kivo")
 
 
 # =========================================================
+# Lightweight per-process abuse protection
+# =========================================================
+_rate_buckets = {}
+
+def _rate_limit(key: str, limit: int, window_seconds: int = 60):
+    now = datetime.now(timezone.utc).timestamp()
+    bucket = _rate_buckets.get(key)
+    if not bucket or now - bucket["started"] >= window_seconds:
+        _rate_buckets[key] = {"started": now, "count": 1}
+        return
+    bucket["count"] += 1
+    if bucket["count"] > limit:
+        raise HTTPException(429, "Too many requests. Please try again later.", headers={"Retry-After": str(max(1, int(window_seconds - (now - bucket["started"]))))})
+
+
+def _client_key(request: Request, scope: str):
+    forwarded = request.headers.get("x-forwarded-for", "")
+    ip = forwarded.split(",")[0].strip() if forwarded else (request.client.host if request.client else "unknown")
+    return f"{scope}:{ip}"
+
+
+# =========================================================
 # Helpers
 # =========================================================
 def _oid(v):
@@ -578,7 +600,7 @@ async def send_email(to: str, subject: str, html: str):
 # Auth
 # =========================================================
 @api.post("/auth/register")
-async def register(body: RegisterIn, response: Response):
+async def register(body: RegisterIn, response: Response, request: Request):\n    _rate_limit(_client_key(request, "register"), 5, 300)
     email = body.email.lower().strip()
     existing = await db.users.find_one({"email": email})
     if existing:
@@ -756,7 +778,7 @@ async def social_login(body: dict, response: Response):
     }
 
 @api.post("/auth/verify-email")
-async def verify_email(body: dict, response: Response):
+async def verify_email(body: dict, response: Response, request: Request):\n    _rate_limit(_client_key(request, "verify-email"), 10, 300)
     email = body.get("email", "").lower().strip()
     code = str(body.get("code", "")).strip()
     token = str(body.get("token", "")).strip()
@@ -818,7 +840,7 @@ async def verify_email(body: dict, response: Response):
     }
 
 @api.post("/auth/resend-verification")
-async def resend_verification(body: dict):
+async def resend_verification(body: dict, request: Request):\n    _rate_limit(_client_key(request, "resend-verification"), 3, 300)
     email = body.get("email", "").lower().strip()
     user = await db.users.find_one({"email": email})
     if not user:
@@ -862,7 +884,7 @@ async def resend_verification(body: dict):
     }
 
 @api.post("/auth/login")
-async def login(body: LoginIn, response: Response):
+async def login(body: LoginIn, response: Response, request: Request):\n    _rate_limit(_client_key(request, "login"), 10, 60)
     email = body.email.lower().strip()
     user = await db.users.find_one({"email": email})
     if not user:
@@ -904,7 +926,7 @@ async def logout(response: Response):
     return {"ok": True}
 
 @api.post("/auth/forgot-password")
-async def forgot_password(body: dict):
+async def forgot_password(body: dict, request: Request):\n    _rate_limit(_client_key(request, "forgot-password"), 5, 300)
     email = body.get("email", "").lower().strip()
     if not email:
         raise HTTPException(400, "Email address is required.")
@@ -949,7 +971,7 @@ async def forgot_password(body: dict):
     }
 
 @api.post("/auth/reset-password")
-async def reset_password(body: dict):
+async def reset_password(body: dict, request: Request):\n    _rate_limit(_client_key(request, "reset-password"), 10, 300)
     token = body.get("token")
     code = body.get("code")
     email = body.get("email", "").lower().strip()
@@ -1264,7 +1286,7 @@ def _iso_dt(v):
 
 
 @api.post("/subscriptions/razorpay/order")
-async def razorpay_order(body: RazorpayOrderIn, user: dict = Depends(get_current_user)):
+async def razorpay_order(body: RazorpayOrderIn, request: Request, user: dict = Depends(get_current_user)):\n    _rate_limit(_client_key(request, "razorpay-order"), 10, 60)
     active = await _active_sub(user['id'])
     now = datetime.now(timezone.utc)
     if body.renew and active:
@@ -1348,7 +1370,7 @@ async def _finalize_razorpay_payment(order_id: str, payment_id: str, signature: 
 
 
 @api.post("/subscriptions/razorpay/verify")
-async def razorpay_verify(body: RazorpayVerifyIn, user: dict = Depends(get_current_user)):
+async def razorpay_verify(body: RazorpayVerifyIn, request: Request, user: dict = Depends(get_current_user)):\n    _rate_limit(_client_key(request, "razorpay-verify"), 10, 60)
     sub = await db.subscriptions.find_one({"user_id":user['id'],"razorpay_order_id":body.razorpay_order_id,"status":"pending","payment_method":"razorpay"})
     if not sub:
         existing = await db.subscriptions.find_one({"user_id":user['id'],"razorpay_order_id":body.razorpay_order_id,"razorpay_payment_id":body.razorpay_payment_id})
