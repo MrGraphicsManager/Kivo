@@ -340,6 +340,16 @@ export default function Products() {
     api.delete(`/products/${p.id}`).catch(() => {});
   };
 
+  const performDeleteProduct = async (p) => {
+    try {
+      await api.delete(`/products/${p.id}`);
+      toast.success(`Deleted ${p.name}`);
+      await load();
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || "Failed to delete product");
+    }
+  };
+
   const del = async (p) => {
     if (isCashierMode && staffSettings?.block_product_deletion) {
       setPendingDeleteProduct(p);
