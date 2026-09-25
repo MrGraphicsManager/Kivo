@@ -22,30 +22,6 @@ import {
   Edit2
 } from "lucide-react";
 
-export const getStoredCustomers = () => {
-  try {
-    const raw = localStorage.getItem("dukaan_customers");
-    if (!raw) {
-      return [];
-    }
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-};
-
-export const saveStoredCustomers = (custs) => {
-  try {
-    if (Array.isArray(custs)) {
-      localStorage.setItem("dukaan_customers", JSON.stringify(custs));
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("dukaan_customers_updated", { detail: custs }));
-      }
-    }
-  } catch {}
-};
-
 export default function Customers() {
   const nav = useNavigate();
   const [items, setItems] = useState(() => getStoredCustomers());
