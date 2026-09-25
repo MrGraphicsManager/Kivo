@@ -655,68 +655,14 @@ async def register(body: RegisterIn, response: Response):
     }
 
 @api.post("/auth/social-login")
-async def social_login(body: dict, response: Response):
-    email = body.get("email", "").lower().strip()
-    name = body.get("name", "").strip() or "Social User"
-    provider = body.get("provider", "google")
-    if not email:
-        raise HTTPException(400, "Email is required for social sign-in.")
-
-    user = await db.users.find_one({"email": email})
-    now = now_iso()
-    if not user:
-        user_doc = {
-            "name": name,
-            "email": email,
-            "password_hash": "",
-            "is_admin": False,
-            "is_verified": True,
-            "provider": provider,
-            "created_at": now
-        }
-        res = await db.users.insert_one(user_doc)
-        user_id = str(res.inserted_id)
-
-        shop_doc = {
-            'user_id': user_id,
-            'name': name + " Shop",
-            'tagline': 'Smart Retail POS',
-            'phone': '',
-            'address': '',
-            'currency': 'INR',
-            'currency_symbol': '₹',
-            'invoice_header': name + " Shop",
-            'invoice_footer': 'Thank you for shopping with us!',
-            'min_stock_default': 5,
-            'contact_email': email,
-            'store_category': '',
-            'gst_number': '',
-            'gst_status': 'not_submitted',
-            'gst_enabled': False,
-            'gst_rate': 0,
-            'financial_year': '2026-27',
-            'store_active': True,
-            'created_at': now
-        }
-        await db.shops.insert_one(shop_doc)
-    else:
-        user_id = str(user["_id"])
-        await db.users.update_one({"_id": user["_id"]}, {"$set": {"is_verified": True, "provider": provider}})
-
-    token = create_access_token(user_id, email)
-    response.set_cookie("access_token", token, httponly=True, samesite="lax", max_age=7 * 86400)
-    return {
-        "ok": True,
-        "access_token": token,
-        "user": {
-            "id": user_id,
-            "name": user.get("name", name) if user else name,
-            "email": email,
-            "is_verified": True,
-            "provider": provider
-        }
-    }
-
+async def social_login():
+    # Client-supplied email/name is not an authentication proof. Social login must
+    # be completed through a provider-verified OAuth/OIDC flow before an account
+    # session is issued.
+    raise HTTPException(
+        status_code=501,
+        detail="Social login is temporarily unavailable until provider-side OAuth/OIDC token verification is enabled."
+    )
 
 @api.post("/auth/verify-email")
 async def verify_email(body: dict, response: Response):
