@@ -49,16 +49,16 @@ jobs:
 
       - name: Package Windows Executables (.exe)
         working-directory: ./desktop
-        run: npx @electron/packager . Dukaan --platform=win32 --arch=x64 --icon=icon.ico --out=dist --overwrite
+        run: npx @electron/packager . Kivo --platform=win32 --arch=x64 --icon=icon.ico --out=dist --overwrite
 
       - name: Compress Windows Executable Package
         run: |
-          Compress-Archive -Path desktop/dist/Dukaan-win32-x64/* -DestinationPath desktop/dist/Dukaan-Windows-PC.zip -Force
+          Compress-Archive -Path desktop/dist/Kivo-win32-x64/* -DestinationPath desktop/dist/Kivo-Windows-PC.zip -Force
 
       - name: Upload Windows .exe Package
         uses: actions/upload-artifact@v4
         with:
-          name: Dukaan-Windows-PC-Software
+          name: Kivo-Windows-PC-Software
           path: desktop/dist/Dukaan-Windows-PC.zip
           retention-days: 30
 
@@ -119,11 +119,11 @@ jobs:
       - name: Rename and Prepare APK
         working-directory: ./frontend/android/app/build/outputs/apk/debug
         run: |
-          cp app-debug.apk Dukaan.apk
+          cp app-debug.apk Kivo.apk
 
       - name: Upload Android .apk Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Dukaan-Android-App-APK
+          name: Kivo-Android-App-APK
           path: ./frontend/android/app/build/outputs/apk/debug/Dukaan.apk
           retention-days: 30
