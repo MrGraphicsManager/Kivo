@@ -2157,6 +2157,16 @@ async def _stop_whatsapp_reminder_loop():
 # =========================================================
 @app.get("/")
 async def root():
-    return {"ok":True,"service":"dukaan-api"}
+    return {"ok": True, "service": "kivo-api"}
+
+
+@app.get("/health")
+async def health():
+    try:
+        await db.command("ping")
+        return {"ok": True, "service": "kivo-api", "database": "ok"}
+    except Exception:
+        logger.exception("health_database_check_failed")
+        raise HTTPException(status_code=503, detail="Database unavailable")
 
 app.include_router(api)
