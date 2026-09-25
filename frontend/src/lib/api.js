@@ -14,23 +14,11 @@ export const api = axios.create({
 // Attach token, shop ID, and cache-busting timestamps to avoid stale browser disk cache
 api.interceptors.request.use((config) => {
   const shopId = localStorage.getItem("dukaan_shop_id");
-  const token = localStorage.getItem("dukaan_access_token") || localStorage.getItem("dukaan_token");
+  // Authentication is cookie-only. The access token is HttpOnly and never exposed to JavaScript.
   if (shopId) {
     config.headers["X-Shop-Id"] = shopId;
   }
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  try {
-    const rawUser = localStorage.getItem("dukaan_user");
-    if (rawUser) {
-      const u = JSON.parse(rawUser);
-      if (u?.email) {
-        config.headers["X-User-Email"] = u.email;
-      }
-    }
-  } catch {}
-  // Guarantee 100% fresh real-time responses by cache-busting all GET queries
+   // Guarantee 100% fresh real-time responses by cache-busting all GET queries
   if (!config.method || config.method.toLowerCase() === "get") {
     config.params = {
       ...(config.params || {}),
