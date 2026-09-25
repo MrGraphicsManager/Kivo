@@ -226,26 +226,9 @@ export default function Products() {
   };
 
   const load = () => {
-    const local = getStoredProducts();
     api.get("/products", { params: { q: q || undefined, category } })
-      .then(r => {
-        const server = Array.isArray(r.data) ? r.data : [];
-        if (server.length === 0 && local.length > 0) {
-          setItems(local);
-          return;
-        }
-        const merged = [...server];
-        local.forEach(lp => {
-          if (!merged.some(m => m.id === lp.id || (m.name && lp.name && m.name.toLowerCase().trim() === lp.name.toLowerCase().trim()))) {
-            merged.push(lp);
-          }
-        });
-        saveStoredProducts(merged);
-        setItems(merged);
-      })
-      .catch(() => {
-        setItems(local);
-      });
+      .then(r => setItems(Array.isArray(r.data) ? r.data : []))
+      .catch(() => setItems([]));
   };
 
   useEffect(() => {
