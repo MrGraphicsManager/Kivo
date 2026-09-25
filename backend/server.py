@@ -1859,32 +1859,37 @@ async def create_order(body: OrderIn, shop: dict = Depends(get_shop)):
         "status": "udhaar" if pending > 0 else "paid",
     }
 
-    # Insert only after all business rules and stock checks pass.
-    r = await db.orders.insert_one(doc)
-    order_id = str(r.inserted_id)
+    # Checkout is a multi-document operation (order + stock + movement records).
+    # Require a MongoDB transaction so a partial checkout can never become durable.
+    try:
+        async with await client.start_session() as session:
+            async with session.start_transaction():
+                r = await db.orders.insert_one(doc, session=session)
+                order_id = str(r.inserted_id)
 
-    # Atomic stock guards prevent a concurrent sale from driving stock below zero.
-    for pid, qty in requested_qty.items():
-        prod = product_rows[pid]
-        if prod.get("unlimited_stock"):
-            continue
-        updated = await db.products.update_one(
-            {"_id": ObjectId(pid), "shop_id": shop["id"], "stock": {"$gte": qty}},
-            {"$inc": {"stock": -qty}},
-        )
-        if updated.modified_count != 1:
-            # This can only happen if another checkout consumed stock between
-            # preflight validation and this update. Remove the just-created order
-            # rather than leaving a confirmed sale with unavailable inventory.
-            await db.orders.delete_one({"_id": r.inserted_id, "shop_id": shop["id"]})
-            raise HTTPException(409, f"Stock changed while processing {prod.get('name', 'product')}; please retry")
-        await db.stock_movements.insert_one({
-            "shop_id": shop["id"],
-            "product_id": pid,
-            "qty": -qty,
-            "reason": f"sale#{order_no}",
-            "created_at": now_iso(),
-        })
+                for pid, qty in requested_qty.items():
+                    prod = product_rows[pid]
+                    if prod.get("unlimited_stock"):
+                        continue
+                    updated = await db.products.update_one(
+                        {"_id": ObjectId(pid), "shop_id": shop["id"], "stock": {"$gte": qty}},
+                        {"$inc": {"stock": -qty}},
+                        session=session,
+                    )
+                    if updated.modified_count != 1:
+                        raise HTTPException(409, f"Stock changed while processing {prod.get('name', 'product')}; please retry")
+                    await db.stock_movements.insert_one({
+                        "shop_id": shop["id"],
+                        "product_id": pid,
+                        "qty": -qty,
+                        "reason": f"sale#{order_no}",
+                        "created_at": doc["created_at"],
+                    }, session=session)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Checkout transaction failed: %s", exc)
+        raise HTTPException(503, "Checkout could not be completed atomically. Please retry.")
 
     doc["id"] = order_id
     doc.pop("_id", None)
