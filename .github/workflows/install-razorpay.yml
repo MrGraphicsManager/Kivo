@@ -2,12 +2,6 @@ name: Apply subscription trial patch
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - '.github/workflows/install-razorpay.yml'
-
-permissions:
-  contents: write
 
 jobs:
   patch:
