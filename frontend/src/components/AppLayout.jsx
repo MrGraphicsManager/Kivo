@@ -355,7 +355,7 @@ export default function AppLayout() {
 
   useEffect(() => {
     checkPlatformConfig();
-    const interval = setInterval(checkPlatformConfig, 4000);
+    const interval = setInterval(checkPlatformConfig, 60000);
     const onFocus = () => checkPlatformConfig();
     window.addEventListener("focus", onFocus);
     const onVis = () => {
