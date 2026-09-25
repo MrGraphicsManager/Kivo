@@ -1595,6 +1595,13 @@ exports.handler = async (event, context) => {
       const reset_code = String(Math.floor(100000 + Math.random() * 900000));
       const reset_token = "rst_" + Date.now() + "_" + Math.random().toString(36).substring(2, 10);
       const resetLink = `${FRONTEND_URL}/reset-password?token=${reset_token}&email=${encodeURIComponent(email)}`;
+      const resetExpiresAt = Date.now() + 60 * 60 * 1000;
+      if (!globalPlatformConfig.password_resets) globalPlatformConfig.password_resets = {};
+      globalPlatformConfig.password_resets[email] = {
+        code: reset_code,
+        token: reset_token,
+        expires_at: resetExpiresAt
+      };
 
       const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #E8E5DF; border-radius: 16px; background-color: #FAF6F0;">
@@ -1620,13 +1627,12 @@ exports.handler = async (event, context) => {
         console.error("Failed to send forgot password email:", err);
       }
 
+      await savePersistentState();
       return {
         statusCode: 200,
         headers,
         body: JSON.stringify({
           ok: true,
-          reset_code,
-          reset_token,
           message: "If an account exists with this email, a reset code has been sent."
         })
       };
