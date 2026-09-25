@@ -37,7 +37,6 @@ import {
   Store,
   Lock
 } from "lucide-react";
-import { getStoredProducts, saveStoredProducts } from "@/lib/defaultProducts";
 import { useAuth } from "@/lib/AuthContext";
 import { FMCG_MASTER_CATALOG, findFMCGByBarcode, searchFMCGCatalog } from "@/lib/fmcgMasterCatalog";
 import { isCashierModeActive, getProStaffSettings } from "@/lib/proStaffPermissions";
@@ -123,7 +122,7 @@ export default function Products() {
   const isPremium = user?.subscription?.plan === "premium" || user?.is_premium || user?.is_admin || user?.plan === "premium";
   const canUseExpiryGuard = isPremium && isMedicalStore;
 
-  const [items, setItems] = useState(() => getStoredProducts());
+  const [items, setItems] = useState([]);
   const [q, setQ] = useState("");
   const [category, setCategory] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all"); // "all", "in_stock", "low_stock", "out_of_stock", "expiring_soon", "expired"
@@ -177,62 +176,28 @@ export default function Products() {
   };
 
   const handleSyncToAllBranches = async () => {
-    if (!shops || shops.length <= 1) {
-      toast.error("You currently only have 1 active branch.");
-      return;
-    }
-    if (!window.confirm(`Sync ${items.length} products and prices to all ${shops.length - 1} other branch locations? This will ensure catalog parity across all your stores.`)) {
-      return;
-    }
+    if (!shops || shops.length <= 1) { toast.error("You currently only have 1 active branch."); return; }
+    if (!window.confirm(`Sync ${items.length} products and prices to all ${shops.length - 1} other branch locations?`)) return;
     setSyncingBranches(true);
+    try { await api.post("/products/sync-all"); await loadProducts(); toast.success("Products synced across branches."); }
+    catch (e) { toast.error(e?.response?.data?.detail || "Failed to synchronize branch inventories"); }
+    finally { setSyncingBranches(false); }
+  };
+  const handleImportFMCG = async (fmcgItem) => {
+    if (items.some(i => i.barcode === fmcgItem.barcode || i.name.toLowerCase() === fmcgItem.name.toLowerCase())) { toast.info(`"${fmcgItem.name}" is already in your inventory.`); return; }
     try {
-      shops.forEach(sh => {
-        if (sh.id !== currentShopId) {
-          localStorage.setItem(`dukaan_products_${sh.id}`, JSON.stringify(items));
-        }
-      });
-      toast.success(`✅ Successfully synced ${items.length} products across ${shops.length} branch stores!`);
-    } catch {
-      toast.error("Failed to synchronize branch inventories");
-    } finally {
-      setSyncingBranches(false);
-    }
+      await api.post("/products", { name:fmcgItem.name, barcode:fmcgItem.barcode, category:fmcgItem.category, selling_price:fmcgItem.selling_price, purchase_price:Math.round(fmcgItem.selling_price*0.85), stock:24, min_stock:5, unlimited_stock:false, hsn:fmcgItem.hsn, gst_rate:fmcgItem.gst_rate });
+      await loadProducts(); toast.success(`⚡ Added "${fmcgItem.name}" to inventory!`);
+    } catch (err) { toast.error(err?.response?.data?.detail || "Failed to add product"); }
   };
-
-  const handleImportFMCG = (fmcgItem) => {
-    if (items.some(i => i.barcode === fmcgItem.barcode || i.name.toLowerCase() === fmcgItem.name.toLowerCase())) {
-      toast.info(`"${fmcgItem.name}" is already in your inventory.`);
-      return;
-    }
-    const newProd = {
-      id: `prod_fmcg_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-      name: fmcgItem.name,
-      barcode: fmcgItem.barcode,
-      category: fmcgItem.category,
-      selling_price: fmcgItem.selling_price,
-      purchase_price: Math.round(fmcgItem.selling_price * 0.85),
-      stock: 24,
-      min_stock: 5,
-      unlimited_stock: false,
-      hsn: fmcgItem.hsn,
-      gst_rate: fmcgItem.gst_rate
-    };
-    const currentStored = getStoredProducts();
-    const updated = [newProd, ...currentStored];
-    saveStoredProducts(updated);
-    setItems(updated);
-    toast.success(`⚡ Added "${fmcgItem.name}" to inventory!`);
-    api.post("/products", newProd).catch(() => {});
-  };
-
-  const load = () => {
+  const loadProducts = () => {
     api.get("/products", { params: { q: q || undefined, category } })
       .then(r => setItems(Array.isArray(r.data) ? r.data : []))
       .catch(() => setItems([]));
   };
 
   useEffect(() => {
-    load();
+    loadProducts();
     /* eslint-disable-next-line */
   }, [q, category]);
 
