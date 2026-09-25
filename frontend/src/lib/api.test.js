@@ -1,4 +1,4 @@
-import { api, API_BASE, formatApiError, money } from "./lib/api";
+import { api, API_BASE, formatApiError, money } from "./api";
 
 test("API uses same-origin backend by default", () => {
   expect(API_BASE).toBe("/api");
