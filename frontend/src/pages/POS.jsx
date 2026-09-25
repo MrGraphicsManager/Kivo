@@ -214,6 +214,7 @@ export default function POS() {
   // Shift Handover Modal State (F9)
   const [shiftHandoverOpen, setShiftHandoverOpen] = useState(false);
   const [countedCashInput, setCountedCashInput] = useState("");
+  const [shiftOrders, setShiftOrders] = useState([]);
 
   const activeCashierName = isCashierModeActive() 
     ? getActiveCashierName(currentShopId) 
@@ -347,19 +348,24 @@ export default function POS() {
     opening_cash: 0
   };
 
-  const shiftOrders = useMemo(() => {
-    try {
-      const orders = JSON.parse(localStorage.getItem("dukaan_orders") || "[]");
-      const startTime = currentShift?.started_at ? new Date(currentShift.started_at).getTime() : 0;
-      return orders.filter(o => {
-        const orderTime = o.created_at ? new Date(o.created_at).getTime() : 0;
-        return orderTime >= startTime;
+  useEffect(() => {
+    if (!shiftHandoverOpen) return;
+    let cancelled = false;
+    api.get("/orders?limit=1000")
+      .then(res => {
+        if (cancelled) return;
+        const orders = Array.isArray(res?.data) ? res.data : [];
+        const startTime = currentShift?.started_at ? new Date(currentShift.started_at).getTime() : 0;
+        setShiftOrders(orders.filter(o => {
+          const orderTime = o.created_at ? new Date(o.created_at).getTime() : 0;
+          return orderTime >= startTime;
+        }));
+      })
+      .catch(() => {
+        if (!cancelled) setShiftOrders([]);
       });
-    } catch {
-      return [];
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentShift?.started_at, shiftHandoverOpen]);
+    return () => { cancelled = true; };
+  }, [shiftHandoverOpen, currentShift?.started_at]);
 
   const shiftStats = useMemo(() => {
     let cashSales = 0;
