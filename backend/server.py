@@ -1879,6 +1879,40 @@ async def create_order(body: OrderIn, shop: dict = Depends(get_shop)):
     doc.pop("_id", None)
     return doc
 
+@api.get("/orders/shift-summary")
+async def shift_summary(started_at: str, shop: dict = Depends(get_shop)):
+    try:
+        start_dt = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
+    except ValueError:
+        raise HTTPException(400, "Invalid shift start time")
+    if start_dt.tzinfo is None:
+        start_dt = start_dt.replace(tzinfo=timezone.utc)
+    start_iso = start_dt.astimezone(timezone.utc).isoformat()
+
+    pipeline = [
+        {"$match": {"shop_id": shop["id"], "created_at": {"$gte": start_iso}}},
+        {"$group": {
+            "_id": None,
+            "total_bills": {"$sum": 1},
+            "total_sales": {"$sum": {"$ifNull": ["$total", 0]}},
+            "cash_sales": {"$sum": {"$cond": [{"$eq": ["$payment_method", "cash"]}, {"$ifNull": ["$total", 0]}, 0]}},
+            "upi_sales": {"$sum": {"$cond": [{"$in": ["$payment_method", ["upi", "qr"]]}, {"$ifNull": ["$total", 0]}, 0]}},
+            "card_sales": {"$sum": {"$cond": [{"$eq": ["$payment_method", "card"]}, {"$ifNull": ["$total", 0]}, 0]}},
+            "udhaar_sales": {"$sum": {"$cond": [{"$eq": ["$payment_method", "udhaar"]}, {"$ifNull": ["$total", 0]}, 0]}},
+        }},
+    ]
+    row = await db.orders.aggregate(pipeline).to_list(length=1)
+    summary = row[0] if row else {}
+    summary.pop("_id", None)
+    for key in ("total_bills", "cash_sales", "upi_sales", "card_sales", "udhaar_sales", "total_sales"):
+        if key not in summary:
+            summary[key] = 0
+    summary["total_bills"] = int(summary["total_bills"] or 0)
+    for key in ("cash_sales", "upi_sales", "card_sales", "udhaar_sales", "total_sales"):
+        summary[key] = float(summary[key] or 0)
+    return summary
+
+
 @api.get("/orders")
 async def list_orders(shop: dict = Depends(get_shop), status: Optional[str] = None, payment_method: Optional[str] = None, q: Optional[str] = None, limit: int = 200):
     query={"shop_id":shop["id"]}
