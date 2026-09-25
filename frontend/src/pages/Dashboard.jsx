@@ -136,18 +136,7 @@ export default function Dashboard() {
       };
     });
 
-    if (formattedLive.length >= 5) {
-      return formattedLive;
-    }
-
-    // Append fallback bills so table is complete & realistic
-    const combined = [...formattedLive];
-    FALLBACK_BILLS.forEach(fb => {
-      if (combined.length < 5 && !combined.some(c => c.billNo === fb.billNo)) {
-        combined.push(fb);
-      }
-    });
-    return combined;
+    return formattedLive;
   }, [d?.recent_orders]);
 
   const handleShareWhatsApp = (bill) => {
