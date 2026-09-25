@@ -512,8 +512,7 @@ def _assert_safe_email(subject: str, html: str) -> None:
     scan = _EmailScan(); scan.feed(html)
     if scan.tags & {"form", "input", "textarea", "select"}:
         raise ValueError("No forms in email (G2)")
-    body = f"{subject}
-{html}".lower()
+    body = f"{subject}\n{html}".lower()
     for p in _CRED_ASK:
         if p in body:
             raise ValueError(f"Email asks for credentials: {p!r} (G2)")
