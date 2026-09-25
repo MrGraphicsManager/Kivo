@@ -1387,10 +1387,31 @@ exports.handler = async (event, context) => {
 
     // 2B. RESET PASSWORD
     if (path === "/auth/reset-password" && event.httpMethod === "POST") {
-      const { email, new_password } = body;
+      const { email, code, token, new_password } = body;
+      const cleanEmail = String(email || "").trim().toLowerCase();
+      const cleanInput = String(code || token || "").trim();
+      if (!cleanEmail || !cleanInput) {
+        return { statusCode: 400, headers, body: JSON.stringify({ detail: "Email and reset code are required." }) };
+      }
       if (!new_password || new_password.length < 8) {
         return { statusCode: 400, headers, body: JSON.stringify({ detail: "Password must be at least 8 characters." }) };
       }
+      const storedReset = globalPlatformConfig.password_resets?.[cleanEmail];
+      const validReset = storedReset && storedReset.expires_at > Date.now() &&
+        ((storedReset.code && cleanInput === String(storedReset.code)) ||
+         (storedReset.token && cleanInput === String(storedReset.token)));
+      if (!validReset) {
+        return { statusCode: 400, headers, body: JSON.stringify({ detail: "Invalid or expired reset code." }) };
+      }
+
+      const reg = registeredUsersList.find(u => u.email && u.email.toLowerCase() === cleanEmail);
+      if (!reg) {
+        return { statusCode: 404, headers, body: JSON.stringify({ detail: "Account not found." }) };
+      }
+      reg.password_hash = require("crypto").createHash("sha256").update(new_password).digest("hex");
+      delete globalPlatformConfig.password_resets[cleanEmail];
+      await savePersistentState();
+
       return {
         statusCode: 200,
         headers,
