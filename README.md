@@ -4,7 +4,7 @@
 
 ![Kivo Banner](https://img.shields.io/badge/Kivo-Retail%20OS%20v2.0-blue?style=for-the-badge&logo=react)
 ![PEAN Studio](https://img.shields.io/badge/Studio-PEAN%20Ecosystem-purple?style=for-the-badge)
-![Status](https://img.shields.io/badge/Production-Ready-emerald?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-Production%20Hardening-orange?style=for-the-badge)
 
 **A high-performance, low-latency Point of Sale (POS) and retail management platform built for modern Indian Kirana, grocery, and pharmacy counters.**
 
