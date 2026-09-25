@@ -648,24 +648,7 @@ export function AuthProvider({ children }) {
           error: formatApiError(err.response?.data?.detail) || "Invalid verification code. Please check your email and try again." 
         };
       }
-      // Local fallback verification (offline only)
-      try {
-        let regUsers = JSON.parse(localStorage.getItem("dukaan_registered_users") || "[]");
-        const idx = regUsers.findIndex(ru => ru.email.toLowerCase() === cleanEmail);
-        if (idx >= 0) {
-          const u = regUsers[idx];
-          if (u.verification_code && (u.verification_code === cleanInput || u.verification_token === cleanInput)) {
-            u.is_verified = true;
-            u.email_verified = true;
-            regUsers[idx] = u;
-            localStorage.setItem("dukaan_registered_users", JSON.stringify(regUsers));
-            setUser(u);
-            localStorage.setItem("dukaan_user", JSON.stringify(u));
-            return { ok: true, user: u };
-          }
-        }
-      } catch {}
-
+      // A verification code must be validated by the server.
       return { 
         ok: false, 
         error: formatApiError(err.response?.data?.detail) || "Invalid verification code. Please try again." 
@@ -718,19 +701,10 @@ export function AuthProvider({ children }) {
         message: data?.message || `6-digit OTP dispatched to +91 ${cleanPhone}`
       };
     } catch (err) {
-      // Local fallback for offline/development mode
-      const mockOtp = String(Math.floor(100000 + Math.random() * 900000));
-      try {
-        let phoneOtps = JSON.parse(localStorage.getItem("dukaan_phone_otps") || "{}");
-        phoneOtps[cleanPhone] = { otp: mockOtp, expires_at: Date.now() + 10 * 60 * 1000 };
-        localStorage.setItem("dukaan_phone_otps", JSON.stringify(phoneOtps));
-      } catch {}
       return {
-        ok: true,
+        ok: false,
         phone: cleanPhone,
-        demo_otp: mockOtp,
-        sms_gateway_active: false,
-        message: `6-digit OTP dispatched to +91 ${cleanPhone}`
+        error: formatApiError(err.response?.data?.detail) || "Unable to send verification OTP. Please try again."
       };
     }
   };
