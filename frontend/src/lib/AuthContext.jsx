@@ -101,63 +101,26 @@ export function AuthProvider({ children }) {
   }, [currentShopId]);
 
   const loadShops = useCallback(async (fallbackId) => {
-    let localShops = [];
-    try {
-      const raw = localStorage.getItem("dukaan_shops");
-      if (raw) localShops = JSON.parse(raw);
-    } catch {}
-
-    try {
-      const { data } = await api.get("/shops");
-      if (Array.isArray(data) && data.length > 0) {
-        const merged = data.map(ds => {
-          const loc = localShops.find(ls => ls.id === ds.id);
-          return loc ? { ...ds, ...loc } : ds;
-        });
-        setShops(merged);
-        localStorage.setItem("dukaan_shops", JSON.stringify(merged));
-        const stored = localStorage.getItem("dukaan_shop_id");
-        const validStored = merged.find((s) => s.id === stored);
-        const next = validStored?.id || fallbackId || merged[0]?.id || null;
-        setActiveShop(next);
-        return;
-      }
-    } catch (e) {}
-
-    setShops([]);
-    setActiveShop(null);
-    throw new Error("Unable to load shops from the server.");
+    const { data } = await api.get("/shops");
+    if (!Array.isArray(data) || data.length === 0) {
+      setShops([]);
+      setActiveShop(null);
+      throw new Error("No shops available for this account.");
+    }
+    setShops(data);
+    const stored = localStorage.getItem("dukaan_shop_id");
+    const validStored = data.find((shop) => shop.id === stored);
+    const next = validStored?.id || fallbackId || data[0]?.id || null;
+    setActiveShop(next);
+    return data;
   }, [setActiveShop]);
 
   const updateUser = useCallback((updater) => {
     setUser((prev) => {
       const current = prev || {};
       const next = typeof updater === "function" ? updater(current) : { ...current, ...updater };
-      try {
-        localStorage.setItem("dukaan_user", JSON.stringify(next));
-        
-        // Do not mint or overwrite authentication tokens from client-side user state.
-        // Access tokens are issued by the backend after successful authentication.
-
-        // Persist to registered users directory & all subscriptions map
-        if (next.email) {
-          const clean = next.email.toLowerCase().trim();
-          if (next.subscription) {
-            savePersistentSubscription(clean, next.subscription);
-          }
-          const regRaw = localStorage.getItem("dukaan_registered_users") || "[]";
-          let regUsers = JSON.parse(regRaw);
-          const idx = regUsers.findIndex((u) => u.email && u.email.toLowerCase() === clean);
-          if (idx >= 0) {
-            regUsers[idx] = { ...regUsers[idx], ...next };
-          } else {
-            regUsers.push(next);
-          }
-          localStorage.setItem("dukaan_registered_users", JSON.stringify(regUsers));
-        }
-      } catch (e) {
-        console.warn("Failed to persist user update:", e);
-      }
+      // Cache display state only; authentication, subscriptions and ownership remain server-authoritative.
+      try { localStorage.setItem("dukaan_user", JSON.stringify(next)); } catch {}
       return next;
     });
   }, []);
