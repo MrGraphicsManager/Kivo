@@ -2109,6 +2109,10 @@ async def reports_summary(shop: dict = Depends(get_shop)):
 _whatsapp_reminder_task = None
 
 @app.on_event("startup")
+async def _ensure_rate_limit_index():
+    await db.rate_limits.create_index("expires_at", expireAfterSeconds=0)
+
+@app.on_event("startup")
 async def _start_whatsapp_reminder_loop():
     global _whatsapp_reminder_task
     if os.environ.get("AUTHKEY_API_KEY", "").strip():
