@@ -12,6 +12,11 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    env:
+      JWT_SECRET: ci-only-test-secret
+      CORS_ORIGINS: https://officialdukaan.in
+      SERVERLESS_TOKEN_SECRET: ci-only-serverless-secret
+      GOOGLE_CLIENT_ID: ci-google-client-id
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v6
