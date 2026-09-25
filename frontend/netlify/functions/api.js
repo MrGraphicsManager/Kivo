@@ -35,7 +35,6 @@ exports.handler = async (event) => {
     : Buffer.from(event.body || "");
 
   const headers = { ...(event.headers || {}), host: targetUrl.host };
-  delete headers.host;
   delete headers["content-length"];
   delete headers["Content-Length"];
 
