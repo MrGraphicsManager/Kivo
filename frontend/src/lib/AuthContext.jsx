@@ -20,87 +20,6 @@ const DEFAULT_SHOP = {
 export const ADMIN_EMAIL = "contact@officialdukaan.in";
 export const isAdminEmail = (email) => (email || "").toLowerCase().trim() === ADMIN_EMAIL;
 
-export function getPersistentSubscription(email) {
-  if (!email) return null;
-  const clean = email.toLowerCase().trim();
-  try {
-    const allSubs = JSON.parse(localStorage.getItem("dukaan_all_subscriptions") || "{}");
-    if (allSubs[clean]) return allSubs[clean];
-  } catch {}
-  try {
-    const regUsers = JSON.parse(localStorage.getItem("dukaan_registered_users") || "[]");
-    const found = regUsers.find(u => u.email && u.email.toLowerCase() === clean);
-    if (found?.subscription) return found.subscription;
-  } catch {}
-  return null;
-}
-
-export function savePersistentSubscription(email, subscription) {
-  if (!email || !subscription) return;
-  const clean = email.toLowerCase().trim();
-  try {
-    const allSubs = JSON.parse(localStorage.getItem("dukaan_all_subscriptions") || "{}");
-    allSubs[clean] = subscription;
-    localStorage.setItem("dukaan_all_subscriptions", JSON.stringify(allSubs));
-  } catch {}
-  try {
-    let regUsers = JSON.parse(localStorage.getItem("dukaan_registered_users") || "[]");
-    const idx = regUsers.findIndex(u => u.email && u.email.toLowerCase() === clean);
-    if (idx >= 0) {
-      regUsers[idx].subscription = subscription;
-      if (subscription.plan === "premium" || subscription.plan === "pro") regUsers[idx].is_premium = true;
-      if (subscription.plan === "pro") regUsers[idx].is_pro = true;
-    } else {
-      regUsers.push({
-        id: `user_${Date.now()}`,
-        email: clean,
-        name: clean.split("@")[0],
-        subscription,
-        is_verified: true,
-        created_at: new Date().toISOString()
-      });
-    }
-    localStorage.setItem("dukaan_registered_users", JSON.stringify(regUsers));
-  } catch {}
-}
-
-export function getPersistentUpcomingSubscription(email) {
-  if (!email) return null;
-  const clean = email.toLowerCase().trim();
-  try {
-    const allQueued = JSON.parse(localStorage.getItem("dukaan_upcoming_subscriptions") || "{}");
-    if (allQueued[clean]) return allQueued[clean];
-  } catch {}
-  try {
-    const regUsers = JSON.parse(localStorage.getItem("dukaan_registered_users") || "[]");
-    const found = regUsers.find(u => u.email && u.email.toLowerCase() === clean);
-    if (found?.upcoming_subscription) return found.upcoming_subscription;
-  } catch {}
-  return null;
-}
-
-export function savePersistentUpcomingSubscription(email, upcomingSub) {
-  if (!email) return;
-  const clean = email.toLowerCase().trim();
-  try {
-    const allQueued = JSON.parse(localStorage.getItem("dukaan_upcoming_subscriptions") || "{}");
-    if (upcomingSub) {
-      allQueued[clean] = upcomingSub;
-    } else {
-      delete allQueued[clean];
-    }
-    localStorage.setItem("dukaan_upcoming_subscriptions", JSON.stringify(allQueued));
-  } catch {}
-  try {
-    let regUsers = JSON.parse(localStorage.getItem("dukaan_registered_users") || "[]");
-    const idx = regUsers.findIndex(u => u.email && u.email.toLowerCase() === clean);
-    if (idx >= 0) {
-      regUsers[idx].upcoming_subscription = upcomingSub || null;
-      localStorage.setItem("dukaan_registered_users", JSON.stringify(regUsers));
-    }
-  } catch {}
-}
-
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     try {
@@ -169,23 +88,16 @@ export function AuthProvider({ children }) {
     else localStorage.removeItem("dukaan_shop_id");
   }, []);
 
-  const updateShop = useCallback((shopData) => {
-    setShops((prev) => {
-      const list = Array.isArray(prev) ? prev : [DEFAULT_SHOP];
-      const targetId = shopData.id || currentShopId || DEFAULT_SHOP.id;
-      const idx = list.findIndex(s => s.id === targetId);
-      let next;
-      if (idx >= 0) {
-        next = [...list];
-        next[idx] = { ...next[idx], ...shopData };
-      } else {
-        next = [...list, { ...shopData, id: targetId }];
-      }
-      try {
-        localStorage.setItem("dukaan_shops", JSON.stringify(next));
-      } catch {}
-      return next;
-    });
+  const updateShop = useCallback(async (shopData) => {
+    try {
+      const targetId = shopData.id || currentShopId;
+      if (!targetId) throw new Error("Shop id is required");
+      const { data } = await api.put("/shops/" + encodeURIComponent(targetId), shopData);
+      setShops((prev) => (Array.isArray(prev) ? prev.map(s => s.id === targetId ? data : s) : [data]));
+      return data;
+    } catch (err) {
+      throw err;
+    }
   }, [currentShopId]);
 
   const loadShops = useCallback(async (fallbackId) => {
@@ -212,30 +124,9 @@ export function AuthProvider({ children }) {
       }
     } catch (e) {}
 
-    // Fallback: If local shops exist, use them
-    if (Array.isArray(localShops) && localShops.length > 0) {
-      setShops(localShops);
-      const stored = localStorage.getItem("dukaan_shop_id");
-      const valid = localShops.find(s => s.id === stored);
-      setActiveShop(valid ? valid.id : localShops[0].id);
-      return;
-    }
-
-    const existingShopId = localStorage.getItem("dukaan_shop_id") || DEFAULT_SHOP.id;
-    const storedUser = localStorage.getItem("dukaan_user");
-    let uName = "My";
-    if (storedUser) {
-      try { uName = JSON.parse(storedUser).name || "My"; } catch {}
-    }
-    const userShop = {
-      ...DEFAULT_SHOP,
-      id: existingShopId,
-      name: `${uName}'s Store`,
-      owner_name: uName
-    };
-    setShops([userShop]);
-    localStorage.setItem("dukaan_shops", JSON.stringify([userShop]));
-    setActiveShop(userShop.id);
+    setShops([]);
+    setActiveShop(null);
+    throw new Error("Unable to load shops from the server.");
   }, [setActiveShop]);
 
   const updateUser = useCallback((updater) => {
@@ -302,7 +193,7 @@ export function AuthProvider({ children }) {
           is_admin: isUserAdmin,
           subscription: finalSub,
           upcoming_subscription: upcomingSub,
-          is_premium: data.is_premium || localIsPremium || (finalSub?.plan === "premium" || finalSub?.plan === "pro"),
+          is_premium: data.is_premium || (finalSub?.plan === "premium" || finalSub?.plan === "pro"),
           is_pro: data.is_pro || (finalSub?.plan === "pro")
         };
         setUser(finalUser);
@@ -313,7 +204,6 @@ export function AuthProvider({ children }) {
     } catch {
       // Authentication failures never fall back to browser-stored identity.
       setUser(null);
-      return null;
       return null;
     }
   }, [loadShops]);
