@@ -284,73 +284,17 @@ export function AuthProvider({ children }) {
             return null;
           }
         }
-        // Retain local subscription if backend doesn't return one or if local one has valid active days
-        const stored = localStorage.getItem("dukaan_user");
-        let localSub = null;
-        let localUpcomingSub = null;
-        let localIsPremium = false;
-        if (stored) {
-          try {
-            const parsed = JSON.parse(stored);
-            localSub = parsed.subscription;
-            localUpcomingSub = parsed.upcoming_subscription;
-            localIsPremium = Boolean(parsed.is_premium);
-          } catch {}
-        }
-        const persistentSub = getPersistentSubscription(cleanEmail);
-        const persistentUpcoming = getPersistentUpcomingSubscription(cleanEmail);
-
-        // Query subscriptions endpoint directly for any live admin-granted plans
+        // Subscription state is authoritative on the server. Browser storage is never used to grant access.
         let activeSubscription = data.subscription;
         let serverUpcoming = null;
         try {
           const subRes = await api.get("/subscriptions/me");
-          if (subRes.data?.active) {
-            activeSubscription = subRes.data.active;
-          }
-          if (subRes.data?.upcoming || subRes.data?.queued) {
-            serverUpcoming = subRes.data.upcoming || subRes.data.queued;
-          }
+          activeSubscription = subRes.data?.active || activeSubscription || null;
+          serverUpcoming = subRes.data?.upcoming || subRes.data?.scheduled || subRes.data?.queued || null;
         } catch {}
 
-        // Pick subscription with latest expiry so renewals are never wiped out
-        const candidateSubs = [activeSubscription, persistentSub, localSub].filter(Boolean);
-        let finalSub = candidateSubs[0] || null;
-        for (const c of candidateSubs) {
-          const cTime = c?.expires_at ? new Date(c.expires_at).getTime() : 0;
-          const bestTime = finalSub?.expires_at ? new Date(finalSub.expires_at).getTime() : 0;
-          if (cTime > bestTime) {
-            finalSub = c;
-          }
-        }
-
-        let upcomingSub = serverUpcoming || persistentUpcoming || localUpcomingSub || null;
-
-        // Dynamic synchronization: Upcoming plan starts_at must never be before finalSub.expires_at
-        if (finalSub?.expires_at && upcomingSub) {
-          const finalExpMs = new Date(finalSub.expires_at).getTime();
-          const upcomingStartMs = upcomingSub.starts_at ? new Date(upcomingSub.starts_at).getTime() : 0;
-          if (finalExpMs > upcomingStartMs) {
-            const durationDays = Number(upcomingSub.duration_days) || (upcomingSub.plan === "pro" ? 60 : 30);
-            upcomingSub = {
-              ...upcomingSub,
-              starts_at: finalSub.expires_at,
-              expires_at: new Date(finalExpMs + durationDays * 86400000).toISOString()
-            };
-          }
-        }
-
-        // Auto-promote if current active subscription has expired
-        if (finalSub?.expires_at && new Date(finalSub.expires_at).getTime() <= Date.now() && upcomingSub) {
-          finalSub = {
-            plan: upcomingSub.plan,
-            status: "active",
-            is_annual: Boolean(upcomingSub.is_annual),
-            expires_at: upcomingSub.expires_at || new Date(Date.now() + (upcomingSub.duration_days || 30) * 86400000).toISOString(),
-            activated_at: new Date().toISOString()
-          };
-          upcomingSub = null;
-        }
+        const finalSub = activeSubscription || null;
+        const upcomingSub = serverUpcoming || null;
 
         const isUserAdmin = isAdminEmail(cleanEmail);
         const finalUser = {
@@ -363,44 +307,13 @@ export function AuthProvider({ children }) {
         };
         setUser(finalUser);
         localStorage.setItem("dukaan_user", JSON.stringify(finalUser));
-        if (finalSub) {
-          savePersistentSubscription(cleanEmail, finalSub);
-        }
-        savePersistentUpcomingSubscription(cleanEmail, upcomingSub);
         await loadShops(finalUser.default_shop_id);
         return finalUser;
       }
     } catch {
-      // If there's a stored user, keep using it (offline mode)
-      const stored = localStorage.getItem("dukaan_user");
-      if (stored) {
-        try {
-          const current = JSON.parse(stored);
-          if (current && current.email) {
-            const clean = current.email.toLowerCase().trim();
-            if (isAdminEmail(clean) || current.is_admin) {
-              const isSessionAuth = sessionStorage.getItem("dukaan_admin_authenticated");
-              if (!isSessionAuth) {
-                setUser(null);
-                return null;
-              }
-            }
-            current.is_admin = isAdminEmail(clean);
-            const persistentSub = getPersistentSubscription(clean);
-            if (!current.subscription && persistentSub) {
-              current.subscription = persistentSub;
-              if (persistentSub.plan === "premium" || persistentSub.plan === "pro") current.is_premium = true;
-              if (persistentSub.plan === "pro") current.is_pro = true;
-            }
-            setUser(current);
-            return current;
-          }
-        } catch {
-          // corrupt stored data — stay logged out
-          localStorage.removeItem("dukaan_user");
-          setUser(null);
-        }
-      }
+      // Authentication failures never fall back to browser-stored identity.
+      setUser(null);
+      return null;
       return null;
     }
   }, [loadShops]);
@@ -474,22 +387,17 @@ export function AuthProvider({ children }) {
       }
 
       const u = await refresh();
-      const persistentSub = getPersistentSubscription(cleanEmail);
-      const finalSub = persistentSub || localFound?.subscription || data?.user?.subscription || u?.subscription || null;
+      const finalSub = data?.user?.subscription || u?.subscription || null;
       const finalUser = {
-        ...(localFound || {}),
         ...(data?.user || {}),
         ...(u || {}),
-        name: localFound?.name || data?.user?.name || cleanEmail.split("@")[0],
+        name: data?.user?.name || u?.name || cleanEmail.split("@")[0],
         email: cleanEmail,
         is_admin: isUserAdmin,
         subscription: finalSub,
-        is_premium: Boolean((localFound || {}).is_premium || (data?.user || {}).is_premium || (u || {}).is_premium || finalSub?.plan === "premium" || finalSub?.plan === "pro"),
-        is_pro: Boolean((localFound || {}).is_pro || (data?.user || {}).is_pro || (u || {}).is_pro || finalSub?.plan === "pro")
+        is_premium: Boolean((data?.user || {}).is_premium || (u || {}).is_premium || finalSub?.plan === "premium" || finalSub?.plan === "pro"),
+        is_pro: Boolean((data?.user || {}).is_pro || (u || {}).is_pro || finalSub?.plan === "pro")
       };
-      if (finalSub) {
-        savePersistentSubscription(cleanEmail, finalSub);
-      }
       setUser(finalUser);
       localStorage.setItem("dukaan_user", JSON.stringify(finalUser));
       return { ok: true, user: finalUser };
@@ -520,63 +428,7 @@ export function AuthProvider({ children }) {
         };
       }
 
-      if (!localFound) {
-        return { ok: false, error: "No account found with this email. Please create an account." };
-      }
-
-      if (isUserAdmin) {
-        sessionStorage.setItem("dukaan_admin_authenticated", "true");
-      } else {
-        sessionStorage.removeItem("dukaan_admin_authenticated");
-      }
-
-      localFound.is_admin = isUserAdmin;
-      setUser(localFound);
-      localStorage.setItem("dukaan_user", JSON.stringify(localFound));
-      return { ok: true, user: localFound };
-    }
-  };
-
-  const register = async (name, email, password, referral_code = "") => {
-    const cleanEmail = (email || "").toLowerCase().trim();
-    const cleanName = (name || "").trim();
-
-    let regUsers = [];
-    try {
-      regUsers = JSON.parse(localStorage.getItem("dukaan_registered_users") || "[]");
-    } catch {}
-
-    if (regUsers.some(u => u.email.toLowerCase() === cleanEmail)) {
-      return { ok: false, error: "An account with this email already exists. Please sign in." };
-    }
-
-    const localCode = String(Math.floor(100000 + Math.random() * 900000));
-    const localToken = "tok_" + Date.now();
-
-    try {
-      const { data } = await api.post("/auth/register", { name: cleanName, email: cleanEmail, password, referral_code: (referral_code || "").trim() });
-      const newUser = {
-        id: data?.user?.id || `user_${Date.now()}`,
-        name: cleanName,
-        email: cleanEmail,
-        phone: "",
-        phone_verified: false,
-        email_verified: false,
-        is_verified: false,
-        verification_code: data?.verification_code || localCode,
-        verification_token: data?.verification_token || localToken,
-        subscription: null,
-        default_shop_id: data?.shop_id || `shop_${Date.now()}`,
-        created_at: new Date().toISOString()
-      };
-      regUsers.push(newUser);
-      localStorage.setItem("dukaan_registered_users", JSON.stringify(regUsers));
-      return { 
-        ok: true, 
-        needVerification: true, 
-        email: cleanEmail, 
-        code: newUser.verification_code 
-      };
+      return { ok: false, error: formatApiError(detail) || "Unable to sign in. Please try again." };
     } catch (err) {
       if (err.response?.status === 409) {
         return { ok: false, error: "An account with this email already exists. Please sign in." };
@@ -585,28 +437,9 @@ export function AuthProvider({ children }) {
         return { ok: false, error: formatApiError(err.response.data.detail) };
       }
 
-      // Client-side registration
-      const newUser = {
-        id: `user_${Date.now()}`,
-        name: cleanName,
-        email: cleanEmail,
-        phone: "",
-        phone_verified: false,
-        email_verified: false,
-        is_verified: false,
-        verification_code: localCode,
-        verification_token: localToken,
-        subscription: null,
-        default_shop_id: `shop_${Date.now()}`,
-        created_at: new Date().toISOString()
-      };
-      regUsers.push(newUser);
-      localStorage.setItem("dukaan_registered_users", JSON.stringify(regUsers));
-      return { 
-        ok: true, 
-        needVerification: true, 
-        email: cleanEmail, 
-        code: localCode 
+      return {
+        ok: false,
+        error: formatApiError(err.response?.data?.detail) || "Registration failed. Please try again."
       };
     }
   };
