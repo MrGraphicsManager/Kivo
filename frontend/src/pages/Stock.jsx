@@ -32,11 +32,22 @@ export default function Stock() {
   const [category, setCategory] = useState("all");
   const [adjust, setAdjust] = useState({ open: false, product: null, qty: "", reason: "Supplier Restock" });
   const [busy, setBusy] = useState(false);
+  const [velocity, setVelocity] = useState({});
 
-  const load = () => {
-    api.get("/products", { params: { q: q || undefined } })
-      .then(r => setItems(Array.isArray(r.data) ? r.data : []))
-      .catch(() => setItems([]));
+  const load = async () => {
+    try {
+      const [productsRes, velocityRes] = await Promise.all([
+        api.get("/products", { params: { q: q || undefined } }),
+        api.get("/products/velocity", { params: { days: 30 } }),
+      ]);
+      setItems(Array.isArray(productsRes.data) ? productsRes.data : []);
+      const nextVelocity = {};
+      (velocityRes.data?.products || []).forEach((row) => { nextVelocity[row.product_id] = row; });
+      setVelocity(nextVelocity);
+    } catch (_) {
+      setItems([]);
+      setVelocity({});
+    }
   };
 
   useEffect(() => {
@@ -63,14 +74,18 @@ export default function Stock() {
     return items.filter(p => p.unlimited_stock || p.stock > (p.min_stock || 5));
   }, [items]);
 
-  // Inventory alerts use current server inventory; browser order cache is never authoritative.
-  const velocityAnalysis = useMemo(() => items.map(p => ({
-    ...p,
-    soldCount: 0,
-    dailyBurn: 0,
-    daysLeft: p.unlimited_stock ? 999 : null,
-    urgent: !p.unlimited_stock && p.stock <= (p.min_stock || 5)
-  })), [items]);
+  // Inventory velocity is calculated server-side from authoritative order history.
+  const velocityAnalysis = useMemo(() => items.map(p => {
+    const stats = velocity[p.id] || {};
+    const daysLeft = p.unlimited_stock ? 999 : (stats.days_left ?? null);
+    return {
+      ...p,
+      soldCount: stats.sold_count || 0,
+      dailyBurn: stats.daily_burn || 0,
+      daysLeft,
+      urgent: !p.unlimited_stock && (p.stock <= (p.min_stock || 5) || (daysLeft !== null && daysLeft <= 7))
+    };
+  }), [items, velocity]);
 
   const urgentDepletions = useMemo(() => {
     return velocityAnalysis.filter(p => p.urgent);
