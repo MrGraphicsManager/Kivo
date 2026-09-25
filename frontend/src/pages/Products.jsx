@@ -237,11 +237,6 @@ export default function Products() {
   }, [q, category]);
 
   useEffect(() => {
-    const handleProductsUpdated = () => {
-      setItems(getStoredProducts());
-    };
-    window.addEventListener("dukaan_products_updated", handleProductsUpdated);
-    return () => window.removeEventListener("dukaan_products_updated", handleProductsUpdated);
   }, []);
 
   const allCategories = useMemo(() => {
