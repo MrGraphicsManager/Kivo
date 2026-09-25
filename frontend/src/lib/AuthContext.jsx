@@ -192,21 +192,13 @@ export function AuthProvider({ children }) {
     if (!cleanEmail) return { ok: false, error: "Please enter your email address." };
     if (!password) return { ok: false, error: "Please enter your password." };
 
-    let regUsers = [];
-    try {
-      regUsers = JSON.parse(localStorage.getItem("dukaan_registered_users") || "[]");
-    } catch {}
-
     const isUserAdmin = isAdminEmail(cleanEmail);
-
-    const localFound = regUsers.find(u => u.email && u.email.toLowerCase() === cleanEmail);
-    // Never validate passwords against browser-stored credentials. The server is authoritative.
 
     try {
       const { data } = await api.post("/auth/login", { 
         email: cleanEmail, 
         password,
-        name: localFound?.name || undefined 
+        name: undefined 
       });
 
       if (data?.need_verification || data?.step === "email") {
@@ -317,16 +309,7 @@ export function AuthProvider({ children }) {
         email_verified: true
       };
       setUser(verifiedUser);
-      localStorage.setItem("dukaan_user", JSON.stringify(verifiedUser));
-
-      // Also update local registered users
-      try {
-        let regUsers = JSON.parse(localStorage.getItem("dukaan_registered_users") || "[]");
-        regUsers = regUsers.map(ru => ru.email.toLowerCase() === cleanEmail ? { ...ru, is_verified: true, email_verified: true } : ru);
-        localStorage.setItem("dukaan_registered_users", JSON.stringify(regUsers));
-      } catch {}
-
-      return { ok: true, user: verifiedUser };
+      localStorage.setItem("dukaan_user", JSON.stringify(verifiedUser));\n      return { ok: true, user: verifiedUser };
     } catch (err) {
       if (err.response?.status === 400) {
         return { 
@@ -348,18 +331,6 @@ export function AuthProvider({ children }) {
       const { data } = await api.post("/auth/resend-verification", { email: cleanEmail });
       return { ok: true, code: data?.verification_code, message: data?.message };
     } catch (err) {
-      // Local fallback
-      try {
-        let regUsers = JSON.parse(localStorage.getItem("dukaan_registered_users") || "[]");
-        const idx = regUsers.findIndex(ru => ru.email.toLowerCase() === cleanEmail);
-        if (idx >= 0) {
-          const newCode = String(Math.floor(100000 + Math.random() * 900000));
-          regUsers[idx].verification_code = newCode;
-          localStorage.setItem("dukaan_registered_users", JSON.stringify(regUsers));
-          return { ok: true, code: newCode, message: "New verification code generated." };
-        }
-      } catch {}
-
       return { 
         ok: false, 
         error: formatApiError(err.response?.data?.detail) || "Failed to resend verification email." 
@@ -429,27 +400,7 @@ export function AuthProvider({ children }) {
       };
 
       setUser(verifiedUser);
-      localStorage.setItem("dukaan_user", JSON.stringify(verifiedUser));
-
-      // Persist to registered users list
-      try {
-        let regUsers = JSON.parse(localStorage.getItem("dukaan_registered_users") || "[]");
-        const idx = regUsers.findIndex(u => (cleanEmail && u.email && u.email.toLowerCase() === cleanEmail) || (u.phone && u.phone.endsWith(cleanPhone)));
-        if (idx >= 0) {
-          regUsers[idx] = {
-            ...regUsers[idx],
-            phone: cleanPhone,
-            phone_verified: true,
-            is_verified: true,
-            email_verified: true
-          };
-        } else if (cleanEmail) {
-          regUsers.push(verifiedUser);
-        }
-        localStorage.setItem("dukaan_registered_users", JSON.stringify(regUsers));
-      } catch {}
-
-      await refresh();
+      localStorage.setItem("dukaan_user", JSON.stringify(verifiedUser));\n      await refresh();
       return { ok: true, user: verifiedUser };
     } catch (err) {
       if (err.response?.status === 400) {
@@ -458,33 +409,6 @@ export function AuthProvider({ children }) {
           error: formatApiError(err.response?.data?.detail) || "Invalid or expired OTP. Please enter the correct 6-digit code."
         };
       }
-      // Local fallback check (offline only)
-      try {
-        let phoneOtps = JSON.parse(localStorage.getItem("dukaan_phone_otps") || "{}");
-        const stored = phoneOtps[cleanPhone];
-        const isValid = stored && stored.otp === cleanOtp && stored.expires_at > Date.now();
-        if (isValid) {
-          const verifiedUser = {
-            ...(user || {}),
-            email: cleanEmail || user?.email || "",
-            phone: cleanPhone,
-            phone_verified: true,
-            is_verified: true,
-            email_verified: true
-          };
-          setUser(verifiedUser);
-          localStorage.setItem("dukaan_user", JSON.stringify(verifiedUser));
-
-          let regUsers = JSON.parse(localStorage.getItem("dukaan_registered_users") || "[]");
-          const idx = regUsers.findIndex(u => (cleanEmail && u.email && u.email.toLowerCase() === cleanEmail) || (u.phone && u.phone.endsWith(cleanPhone)));
-          if (idx >= 0) {
-            regUsers[idx] = { ...regUsers[idx], phone: cleanPhone, phone_verified: true, is_verified: true, email_verified: true };
-            localStorage.setItem("dukaan_registered_users", JSON.stringify(regUsers));
-          }
-          return { ok: true, user: verifiedUser };
-        }
-      } catch {}
-
       return {
         ok: false,
         error: formatApiError(err.response?.data?.detail) || "Invalid or expired OTP. Please try again."
