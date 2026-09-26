@@ -884,10 +884,10 @@ export default function AppLayout() {
           />
 
           {/* Drawer Panel */}
-          <div className="relative w-[82%] max-w-xs bg-white h-full shadow-2xl flex flex-col justify-between z-10 animate-in slide-in-from-left duration-200 border-r border-brand-mitti">
+          <div className="relative w-[82%] max-w-xs bg-white dark:bg-slate-950 h-full shadow-2xl flex flex-col justify-between z-10 animate-in slide-in-from-left duration-200 border-r border-brand-mitti dark:border-slate-800">
             
             {/* Drawer Header */}
-            <div className="p-4 border-b border-brand-mitti/60 flex items-center justify-between bg-brand-sand/40">
+            <div className="p-4 border-b border-brand-mitti/60 dark:border-slate-800 flex items-center justify-between bg-brand-sand/40 dark:bg-slate-900/80">
               <div className="flex items-center gap-2.5">
                 <img 
                   src="/kivo-logo.png" 
@@ -906,7 +906,7 @@ export default function AppLayout() {
               </div>
               <button 
                 onClick={() => setMobileDrawerOpen(false)}
-                className="w-8 h-8 rounded-full bg-white border border-brand-mitti flex items-center justify-center text-brand-indigo/70 hover:text-brand-indigo"
+                className="w-8 h-8 rounded-full bg-white dark:bg-slate-900 border border-brand-mitti dark:border-slate-700 flex items-center justify-center text-brand-indigo/70 dark:text-slate-300 hover:text-brand-indigo"
                 aria-label="Close menu"
               >
                 <X className="w-4 h-4" />
@@ -918,7 +918,7 @@ export default function AppLayout() {
               <div className="text-[10px] font-mono uppercase tracking-wider text-brand-indigo/40 px-3 py-1 font-bold">
                 Menu & Management
               </div>
-              {NAV.map(({ to, key, Icon, end, isProStudio }) => {
+              {NAV.map(({ to, key, label, Icon, end, isProStudio }) => {
                 const locked = isLocked(to);
                 return (
                   <NavLink
@@ -963,7 +963,7 @@ export default function AppLayout() {
             </nav>
 
             {/* Drawer Footer */}
-            <div className="p-4 border-t border-brand-mitti/60 bg-brand-sand/30 space-y-2">
+            <div className="p-4 border-t border-brand-mitti/60 dark:border-slate-800 bg-brand-sand/30 dark:bg-slate-900/80 space-y-2">
               <div className="flex items-center justify-between text-xs text-brand-indigo/70 font-medium">
                 <span className="truncate max-w-[150px] font-bold text-brand-indigo">{user?.name || user?.email?.split('@')[0]}</span>
                 <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-brand-terracotta/10 text-brand-terracotta font-bold">
@@ -985,7 +985,7 @@ export default function AppLayout() {
               </Button>
               <div className="pt-2 text-center">
                 <span className="text-[10px] text-brand-indigo/40 font-medium font-mono">
-                  Dukaan POS · A Product of PEAN
+                  Kivo POS · A Product of PEAN
                 </span>
               </div>
             </div>
@@ -997,7 +997,7 @@ export default function AppLayout() {
           BOTTOM NAVIGATION (Mobile Only - Native App Feel)
       ===================================================== */}
 
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-brand-mitti shadow-nav pb-[env(safe-area-inset-bottom,0px)]">
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-t border-brand-mitti dark:border-slate-800 shadow-nav pb-[env(safe-area-inset-bottom,0px)]">
         <div className="grid grid-cols-5 h-16 items-center px-1">
           {MOBILE_NAV.map(({ to, key, Icon, end, isAction }) => {
             if (isAction) {
