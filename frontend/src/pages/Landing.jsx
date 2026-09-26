@@ -202,7 +202,7 @@ export default function Landing() {
           </Reveal>
 
           <Reveal delay={0.25} distance={24}>
-            <div className="mt-12 flex items-center justify-center gap-3 text-center text-[9px] sm:mt-16" font-black uppercase tracking-[0.22em] text-[#85847b]">
+            <div className="mt-12 flex items-center justify-center gap-3 text-center text-[9px] font-black uppercase tracking-[0.22em] text-[#85847b] sm:mt-16">
               <span className="h-px w-12 bg-[#aaa99f]" />
               Scroll to explore
               <span className="h-px w-12 bg-[#aaa99f]" />
