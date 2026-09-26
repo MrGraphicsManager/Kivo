@@ -130,7 +130,7 @@ function Rule() {
 
 function Label({ children, light = false }) {
   return (
-    <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${light ? "text-[#aaa99f]" : "text-[#77766e"}`}>
+    <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${light ? "text-[#aaa99f]" : "text-[#77766e]"}`}>
       {children}
     </span>
   );
