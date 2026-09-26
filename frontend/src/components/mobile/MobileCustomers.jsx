@@ -1,27 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { ArrowLeft, Search, Plus, Phone, Users, Wallet, ArrowUpRight, MessageSquare, X, Receipt } from "lucide-react";
 import { toast } from "sonner";
+import { api } from "@/lib/api";
 import MobileBottomNav from "./MobileBottomNav";
 
 const DEFAULT_CUSTOMERS = [];
 
-function getStoredCustomers() {
-  try {
-    const raw = localStorage.getItem("dukaan_customers");
-    if (!raw) {
-      return [];
-    }
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) return parsed;
-    return [];
-  } catch {
-    return [];
-  }
-}
-
 export default function MobileCustomers({ onBack, onTabChange }) {
   const [search, setSearch] = useState("");
-  const [customers, setCustomers] = useState(() => getStoredCustomers());
+  const [customers, setCustomers] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newName, setNewName] = useState("");
@@ -29,23 +16,18 @@ export default function MobileCustomers({ onBack, onTabChange }) {
   const [newAddress, setNewAddress] = useState("");
 
   useEffect(() => {
-    setCustomers(getStoredCustomers());
-    const handleUpdated = () => {
-      setCustomers(getStoredCustomers());
-    };
-    window.addEventListener("dukaan_customers_updated", handleUpdated);
-    return () => window.removeEventListener("dukaan_customers_updated", handleUpdated);
+    let active = true;
+    api.get("/customers")
+      .then((res) => {
+        if (active) setCustomers(Array.isArray(res.data) ? res.data : []);
+      })
+      .catch(() => {
+        if (active) setCustomers([]);
+      });
+    return () => { active = false; };
   }, []);
 
-  const saveCustomers = (list) => {
-    setCustomers(list);
-    try {
-      localStorage.setItem("dukaan_customers", JSON.stringify(list));
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("dukaan_customers_updated", { detail: list }));
-      }
-    } catch {}
-  };
+
 
   const filtered = customers.filter((c) => {
     const cName = (c.name || "").toLowerCase();
@@ -59,26 +41,23 @@ export default function MobileCustomers({ onBack, onTabChange }) {
       toast.error("Please enter customer name and phone number");
       return;
     }
-    const newCust = {
-      id: "cust_" + Date.now(),
+    api.post("/customers", {
       name: newName.trim(),
       phone: newPhone.trim(),
-      bills: 0,
-      totalSpent: 0,
-      total_purchases: 0,
-      udhaar: 0,
-      total_pending: 0,
-      total_paid: 0,
-      address: newAddress.trim() || "Navsari",
-      created_at: new Date().toISOString()
-    };
-    const updated = [newCust, ...customers];
-    saveCustomers(updated);
-    setShowAddModal(false);
-    setNewName("");
-    setNewPhone("");
-    setNewAddress("");
-    toast.success(`⚡ Customer ${newCust.name} added!`);
+      address: newAddress.trim(),
+    })
+      .then((res) => {
+        const newCust = res.data;
+        setCustomers((prev) => [newCust, ...prev]);
+        setShowAddModal(false);
+        setNewName("");
+        setNewPhone("");
+        setNewAddress("");
+        toast.success(`Customer ${newCust.name} added!`);
+      })
+      .catch((err) => {
+        toast.error(err?.response?.data?.detail || "Unable to add customer");
+      });
   };
 
   const handleWhatsAppCustomer = (c) => {
