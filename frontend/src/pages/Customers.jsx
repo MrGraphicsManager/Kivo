@@ -423,3 +423,7 @@ export default function Customers() {
     </div>
   );
 }
+
+
+// Backward-compatible export; customer data is server-authoritative.
+export const getStoredCustomers = () => [];
