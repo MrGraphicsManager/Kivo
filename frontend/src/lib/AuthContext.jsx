@@ -211,6 +211,7 @@ export function AuthProvider({ children }) {
       }
 
       return { ok: false, error: formatApiError(detail) || "Unable to sign in. Please try again." };
+    }
   };
 
   const verifyEmail = async (email, codeOrToken) => {
