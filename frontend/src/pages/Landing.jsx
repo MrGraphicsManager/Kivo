@@ -173,28 +173,28 @@ export default function Landing() {
       </header>
 
       <main>
-        <section className="mx-auto max-w-[1180px] px-4 pb-20 pt-20 sm:px-6 sm:pb-28 sm:pt-28">
+        <section className="mx-auto max-w-[1180px] px-5 pb-16 pt-16 sm:px-6 sm:pb-28 sm:pt-28">
           <Reveal>
             <Label>KIVO • BUSINESS • RETAIL</Label>
           </Reveal>
 
           <Reveal delay={0.08} distance={70}>
-            <h1 className="mt-7 max-w-[980px] font-serif text-[clamp(3.5rem,9vw,8.2rem)] font-bold leading-[0.88] tracking-[-0.065em]">
+            <h1 className="mt-7 max-w-[980px] font-serif text-[clamp(3.15rem,9vw,8.2rem)] font-bold leading-[0.88] tracking-[-0.065em]">
               Run your business.
               <em className="block font-serif font-normal text-[#5c6354]">Keep it simple.</em>
             </h1>
           </Reveal>
 
           <Reveal delay={0.16}>
-            <div className="mt-10 grid gap-8 border-t border-[#bdbcb4] pt-7 md:grid-cols-[1fr_0.55fr] md:items-end">
+            <div className="mt-8 grid gap-7 border-t border-[#bdbcb4] pt-6 sm:mt-10 sm:gap-8 sm:pt-7 md:grid-cols-[1fr_0.55fr] md:items-end">
               <p className="max-w-[650px] text-base leading-7 text-[#5d5c55] sm:text-lg">
                 Kivo brings the everyday work of a shop into one connected system — billing, inventory, customers, Udhaar, orders and reports.
               </p>
-              <div className="flex gap-2 md:justify-end">
-                <Link to={user ? "/app" : "/register"} className="rounded-full bg-[#171716] px-5 py-3 text-[11px] font-black text-white">
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row md:justify-end">
+                <Link to={user ? "/app" : "/register"} className="w-full rounded-full bg-[#171716] px-5 py-3 text-center text-[11px] font-black text-white sm:w-auto">
                   {user ? "Open Kivo" : "Get started"} ↗
                 </Link>
-                <a href="#work" className="rounded-full border border-[#aaa99f] bg-transparent px-5 py-3 text-[11px] font-black">
+                <a href="#work" className="w-full rounded-full border border-[#aaa99f] bg-transparent px-5 py-3 text-center text-[11px] font-black sm:w-auto">
                   Explore ↓
                 </a>
               </div>
@@ -202,7 +202,7 @@ export default function Landing() {
           </Reveal>
 
           <Reveal delay={0.25} distance={24}>
-            <div className="mt-16 flex items-center gap-3 text-[9px] font-black uppercase tracking-[0.22em] text-[#85847b]">
+            <div className="mt-12 flex items-center justify-center gap-3 text-center text-[9px] sm:mt-16" font-black uppercase tracking-[0.22em] text-[#85847b]">
               <span className="h-px w-12 bg-[#aaa99f]" />
               Scroll to explore
               <span className="h-px w-12 bg-[#aaa99f]" />
@@ -227,7 +227,7 @@ export default function Landing() {
           </motion.div>
         </div>
 
-        <section id="work" className="mx-auto max-w-[1180px] px-4 py-24 sm:px-6 sm:py-32">
+        <section id="work" className="mx-auto max-w-[1180px] px-5 py-20 sm:px-6 sm:py-32">
           <Reveal>
             <div className="grid gap-8 md:grid-cols-[1fr_0.7fr] md:items-end">
               <div>
@@ -242,13 +242,13 @@ export default function Landing() {
             </div>
           </Reveal>
 
-          <div className="mt-16">
+          <div className="mt-12 sm:mt-16">
             {features.map((feature, index) => {
               const Icon = feature.icon;
               return (
                 <div key={feature.number}>
                   <Rule />
-                  <Reveal delay={0.04} distance={55} className="py-14 sm:py-20">
+                  <Reveal delay={0.04} distance={55} className="py-12 sm:py-20">
                     <div className="grid gap-8 md:grid-cols-[80px_1fr_0.85fr]">
                       <div className="text-[11px] font-black text-[#96958c]">{feature.number}</div>
                       <div>
@@ -256,13 +256,13 @@ export default function Landing() {
                           <Icon size={19} strokeWidth={2.2} />
                           <Label>{feature.name}</Label>
                         </div>
-                        <h3 className="mt-5 max-w-[620px] font-serif text-3xl font-bold leading-tight tracking-[-0.035em] sm:text-5xl">
+                        <h3 className="mt-4 max-w-[620px] font-serif text-[2rem] font-bold leading-[1.02] tracking-[-0.035em] sm:mt-5 sm:text-5xl">
                           {feature.title}
                         </h3>
                       </div>
                       <div>
                         <p className="text-sm leading-7 text-[#626159]">{feature.text}</p>
-                        <ul className="mt-6 space-y-3">
+                        <ul className="mt-5 space-y-3 sm:mt-6">
                           {feature.points.map((point) => (
                             <li key={point} className="flex items-center gap-2 text-[12px] font-bold">
                               <Check size={14} /> {point}
@@ -318,7 +318,7 @@ export default function Landing() {
           </div>
         </section>
 
-        <section id="ecosystem" className="mx-auto max-w-[1180px] px-4 py-24 sm:px-6 sm:py-32">
+        <section id="ecosystem" className="mx-auto max-w-[1180px] px-5 py-20 sm:px-6 sm:py-32">
           <Reveal>
             <Label>THE ECOSYSTEM</Label>
             <h2 className="mt-4 max-w-[760px] font-serif text-4xl font-bold tracking-[-0.045em] sm:text-6xl">
@@ -329,17 +329,17 @@ export default function Landing() {
             </p>
           </Reveal>
 
-          <div className="mt-14 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-10 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 lg:grid-cols-4 sm:mt-14">
             {ecosystem.map((item, index) => (
               <Reveal key={item.label} delay={index * 0.05} distance={38}>
                 <Link
                   to={item.href}
                   className="group block rounded-2xl border border-[#cecdc5] bg-[#f3f3ed] p-5 transition duration-300 hover:-translate-y-1 hover:bg-white"
                 >
-                  <div className="flex h-28 items-center justify-center rounded-xl bg-[#e4e4dc]">
+                  <div className="flex h-24 items-center justify-center rounded-xl bg-[#e4e4dc] sm:h-28">
                     <img src={item.src} alt={item.alt} loading="lazy" className="max-h-20 max-w-[82%] object-contain transition-transform duration-300 group-hover:scale-105" />
                   </div>
-                  <div className="mt-5 flex items-center justify-between">
+                  <div className="mt-4 flex items-center justify-between sm:mt-5">
                     <span className="text-sm font-black">{item.label}</span>
                     <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
                   </div>
@@ -388,7 +388,7 @@ export default function Landing() {
             </p>
           </Reveal>
 
-          <div className="mt-14 grid gap-3 lg:grid-cols-3">
+          <div className="mt-10 grid gap-4 sm:mt-14 lg:grid-cols-3">
             {plans.map((plan, index) => (
               <Reveal key={plan.name} delay={index * 0.08} distance={48}>
                 <div className={`h-full rounded-2xl border p-7 ${plan.featured ? "border-[#171716] bg-[#171716] text-white" : "border-[#cecdc5] bg-[#f3f3ed]"}`}>
@@ -400,7 +400,7 @@ export default function Landing() {
                   </div>
                   <p className={`mt-3 text-xs leading-6 ${plan.featured ? "text-[#aaa99f]" : "text-[#68675f]"}`}>{plan.text}</p>
                   <div className="mt-8">
-                    <span className="font-serif text-5xl font-bold tracking-[-0.05em]">₹{plan.price}</span>
+                    <span className="font-serif text-4xl font-bold tracking-[-0.05em] sm:text-5xl">₹{plan.price}</span>
                     <span className={`ml-1 text-xs ${plan.featured ? "text-[#aaa99f]" : "text-[#77766e]"}`}>{plan.suffix}</span>
                   </div>
                   <ul className="mt-8 space-y-4">
@@ -423,10 +423,10 @@ export default function Landing() {
         </section>
 
         <section className="bg-[#171716] text-white">
-          <div className="mx-auto max-w-[1180px] px-4 py-28 text-center sm:px-6 sm:py-36">
+          <div className="mx-auto max-w-[1180px] px-5 py-24 text-center sm:px-6 sm:py-36">
             <Reveal distance={55}>
               <Label light>READY WHEN YOU ARE</Label>
-              <h2 className="mx-auto mt-5 max-w-[820px] font-serif text-5xl font-bold leading-[0.95] tracking-[-0.055em] sm:text-7xl">
+              <h2 className="mx-auto mt-5 max-w-[820px] font-serif text-[2.9rem] font-bold sm:text-5xl leading-[0.95] tracking-[-0.055em] sm:text-7xl">
                 Make business feel simpler.
               </h2>
               <p className="mx-auto mt-6 max-w-[520px] text-sm leading-7 text-[#aaa99f]">
@@ -434,7 +434,7 @@ export default function Landing() {
               </p>
               <Link
                 to={user ? "/app" : "/register"}
-                className="mt-9 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-[11px] font-black text-[#171716]"
+                className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-3 sm:mt-9 sm:w-auto text-[11px] font-black text-[#171716]"
               >
                 {user ? "Open Kivo" : "Get started"} <ArrowRight size={15} />
               </Link>
