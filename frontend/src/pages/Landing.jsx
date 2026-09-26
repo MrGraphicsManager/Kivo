@@ -1,524 +1,515 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { 
-  Zap, 
-  ArrowRight, 
-  Check, 
-  Sparkles, 
-  MessageCircle, 
-  Printer, 
-  ShieldCheck, 
-  Store, 
-  TrendingUp, 
-  CreditCard, 
-  Keyboard, 
-  Smartphone, 
-  ChevronRight, 
-  Star 
+import {
+  ArrowRight,
+  Check,
+  ChevronRight,
+  Keyboard,
+  MessageCircle,
+  Package,
+  Printer,
+  ShieldCheck,
+  Sparkles,
+  Store,
+  TrendingUp,
+  Zap,
 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 
-export default function Landing() {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const [billingCycle, setBillingCycle] = useState("monthly"); // "monthly" | "annual"
+const ecosystem = [
+  { src: "/kivo-pro.png", alt: "Kivo Pro", href: "/pro-plan", label: "Pro" },
+  { src: "/kivo-premium.png", alt: "Kivo Premium", href: "/premium-plan", label: "Premium" },
+  { src: "/kivo-cafe.png", alt: "Kivo Cafe Plan", href: "/subscribe?plan=cafe", label: "Cafe" },
+  { src: "/kivo-pro-studio.png", alt: "Kivo Pro Studio", href: "/pro-studio", label: "Pro Studio" },
+  { src: "/kivo-ai.png", alt: "Kivo AI", href: "/pro-studio", label: "AI" },
+  { src: "/kivo-grid.png", alt: "Kivo Grid", href: "/app", label: "Grid" },
+  { src: "/kivo-admin.png", alt: "Kivo Admin", href: "/admin", label: "Admin" },
+];
 
-  const scrollToPricing = () => {
-    document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
+const plans = {
+  monthly: [
+    {
+      name: "Starter",
+      price: "79",
+      suffix: "/mo",
+      description: "Everything a single counter needs to bill and manage stock.",
+      features: ["Fast POS Billing Engine", "Unlimited Products & Inventory", "Basic Order History"],
+      href: "/subscribe?plan=starter",
+      featured: false,
+      cta: "Choose Starter",
+    },
+    {
+      name: "Business",
+      price: "119",
+      suffix: "/mo",
+      description: "The complete daily workflow for growing retail counters.",
+      features: ["All Starter features", "58mm / 80mm Thermal Receipts", "WhatsApp Udhaar Khata Reminders", "Daily Profit & Expense Analytics"],
+      href: "/subscribe?plan=business",
+      featured: true,
+      cta: "Start Business",
+    },
+    {
+      name: "Annual VIP",
+      price: "1,499",
+      suffix: "/yr",
+      description: "Full-year access with priority support and premium billing tools.",
+      features: ["Complete 12-Month Access", "Custom Shop Name & Logo on Bill", "Priority WhatsApp Onboarding"],
+      href: "/subscribe?plan=premium",
+      featured: false,
+      cta: "Choose Annual VIP",
+    },
+  ],
+  annual: [
+    {
+      name: "Starter",
+      price: "799",
+      suffix: "/yr",
+      description: "Everything a single counter needs to bill and manage stock.",
+      features: ["Fast POS Billing Engine", "Unlimited Products & Inventory", "Basic Order History"],
+      href: "/subscribe?plan=starter",
+      featured: false,
+      cta: "Choose Starter",
+    },
+    {
+      name: "Business",
+      price: "1,199",
+      suffix: "/yr",
+      description: "The complete daily workflow for growing retail counters.",
+      features: ["All Starter features", "58mm / 80mm Thermal Receipts", "WhatsApp Udhaar Khata Reminders", "Daily Profit & Expense Analytics"],
+      href: "/subscribe?plan=business",
+      featured: true,
+      cta: "Start Business",
+    },
+    {
+      name: "Annual VIP",
+      price: "1,499",
+      suffix: "/yr",
+      description: "Full-year access with priority support and premium billing tools.",
+      features: ["Complete 12-Month Access", "Custom Shop Name & Logo on Bill", "Priority WhatsApp Onboarding"],
+      href: "/subscribe?plan=premium",
+      featured: false,
+      cta: "Choose Annual VIP",
+    },
+  ],
+};
+
+function FadeIn({ children, delay = 0, className = "" }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.15 }}
+      transition={{ duration: 0.55, delay, ease: [0.22, 1, 0.36, 1] }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+export default function Landing() {
+  const { user } = useAuth();
+  const [billingCycle, setBillingCycle] = useState("monthly");
+
+  const scrollTo = (id) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans selection:bg-blue-600/20 selection:text-blue-700 relative overflow-x-hidden">
-      {/* Ambient background glows */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[450px] bg-gradient-to-b from-blue-400/10 via-indigo-400/5 to-transparent blur-[120px] rounded-full" />
-        <div className="absolute top-[40%] right-[-10%] w-[500px] h-[500px] bg-sky-400/10 blur-[140px] rounded-full" />
-        <div className="absolute bottom-10 left-[-10%] w-[500px] h-[500px] bg-indigo-400/10 blur-[140px] rounded-full" />
+    <div className="min-h-screen overflow-x-hidden bg-[#f7f8fa] text-slate-950 selection:bg-blue-600/15 selection:text-blue-700">
+      {/* Ambient background */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        <div className="absolute -top-56 left-1/2 h-[620px] w-[900px] -translate-x-1/2 rounded-full bg-blue-500/[0.08] blur-[130px]" />
+        <div className="absolute right-[-12%] top-[38%] h-[520px] w-[520px] rounded-full bg-indigo-500/[0.06] blur-[130px]" />
+        <div className="absolute bottom-[-10%] left-[-12%] h-[500px] w-[500px] rounded-full bg-sky-400/[0.06] blur-[130px]" />
       </div>
 
-      {/* 1. Sleek Floating Header */}
-      <header className="sticky top-4 z-50 max-w-5xl mx-auto px-4">
-        <nav className="bg-white/85 backdrop-blur-xl border border-slate-200/80 rounded-full px-5 py-3 flex items-center justify-between shadow-lg shadow-slate-200/40">
-          {/* Official Kivo Brand Logo */}
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="flex items-center px-1.5 py-0.5 rounded-xl group-hover:scale-105 transition-transform">
-              <img src="/kivo-logo.png" alt="Kivo - Business Made Simple" className="h-7 sm:h-8 w-auto object-contain" />
-            </div>
-            <span className="hidden sm:inline-block text-[10px] font-bold font-mono uppercase tracking-widest text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200">
+      {/* Header */}
+      <header className="sticky top-3 z-50 px-3 sm:px-5">
+        <nav className="mx-auto flex h-14 max-w-6xl items-center justify-between rounded-2xl border border-slate-200/80 bg-white/80 px-3 shadow-[0_12px_40px_rgba(15,23,42,0.08)] backdrop-blur-2xl sm:h-16 sm:rounded-full sm:px-5">
+          <Link to="/" className="flex items-center gap-2.5">
+            <img src="/kivo-logo.png" alt="Kivo" className="h-7 w-auto sm:h-8" />
+            <span className="hidden rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-slate-500 sm:inline-flex">
               Retail OS
             </span>
           </Link>
 
-          {/* Nav links */}
-          <div className="hidden md:flex items-center gap-7 text-xs font-semibold text-slate-600">
-            <a href="#features" className="hover:text-blue-600 transition-colors">Features</a>
-            <a href="#speed" className="hover:text-blue-600 transition-colors">Why 0.8s?</a>
-            <a href="#pricing" className="hover:text-blue-600 transition-colors">Pricing</a>
+          <div className="hidden items-center gap-8 text-[12px] font-semibold text-slate-500 md:flex">
+            <button onClick={() => scrollTo("features")} className="transition hover:text-slate-950">Features</button>
+            <button onClick={() => scrollTo("ecosystem")} className="transition hover:text-slate-950">Ecosystem</button>
+            <button onClick={() => scrollTo("pricing")} className="transition hover:text-slate-950">Pricing</button>
           </div>
 
-          {/* Actions */}
-          <div className="flex items-center gap-3">
-            {user ? (
-              <Link
-                to="/app/pos"
-                className="h-9 px-4 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-blue-500/25 transition-all cursor-pointer"
-              >
-                <span>Launch POS</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+          <div className="flex items-center gap-2">
+            {!user && (
+              <Link to="/login" className="hidden px-3 py-2 text-xs font-semibold text-slate-600 transition hover:text-slate-950 sm:block">
+                Sign in
               </Link>
-            ) : (
-              <>
-                <Link
-                  to="/login"
-                  className="text-xs font-semibold text-slate-600 hover:text-slate-900 px-3 py-1.5 transition-colors hidden sm:block"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  to="/register"
-                  className="h-9 px-4.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-blue-500/25 active:scale-95 transition-all cursor-pointer"
-                >
-                  <span>Get Started</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </>
             )}
+            <Link
+              to={user ? "/app/pos" : "/register"}
+              className="inline-flex h-9 items-center gap-1.5 rounded-full bg-slate-950 px-4 text-[11px] font-bold text-white shadow-lg shadow-slate-950/15 transition hover:-translate-y-0.5 hover:bg-blue-600 sm:h-10 sm:px-5"
+            >
+              {user ? "Launch POS" : "Get started"}
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
           </div>
         </nav>
       </header>
 
-      {/* 2. Hero Section */}
-      <main className="relative z-10 pt-16 md:pt-24 pb-20 px-4 max-w-5xl mx-auto text-center">
-        {/* Gen-Z Electric Pill */}
-        <motion.div 
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-xs font-medium text-blue-700 mb-6 shadow-xs"
-        >
-          <span className="w-2 h-2 rounded-full bg-blue-600 animate-ping" />
-          <span className="font-bold tracking-wide uppercase text-[10px]">Kivo Retail OS</span>
-          <span className="text-slate-300">•</span>
-          <span className="text-slate-700">0.8s Sub-Second Engine</span>
-        </motion.div>
-
-        {/* Main Punchy Headline */}
-        <motion.h1 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[1.08] font-display max-w-4xl mx-auto text-slate-900"
-        >
-          Run Your Counter. <br />
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600">
-            Kill The Queue.
-          </span>
-        </motion.h1>
-
-        {/* Short, No-BS Subhead */}
-        <motion.p 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="mt-6 text-sm sm:text-base text-slate-600 max-w-xl mx-auto leading-relaxed"
-        >
-          The lightning-fast billing software built for Indian retailers. 
-          Instant keyboard checkout, ESC/POS thermal printing, and 1-tap WhatsApp Udhaar recovery. 
-          <strong className="text-slate-900"> Zero lag. Zero bloat.</strong>
-        </motion.p>
-
-        {/* Hero CTAs */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5"
-        >
-          <Link
-            to="/register"
-            className="w-full sm:w-auto h-12 px-7 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-xl shadow-blue-500/25 flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
-          >
-            <span>Start Free Trial</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-
-          <button
-            onClick={scrollToPricing}
-            className="w-full sm:w-auto h-12 px-6 rounded-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-sm flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer"
-          >
-            <span>View Pricing (From ₹79/mo)</span>
-          </button>
-        </motion.div>
-
-        {/* Social Proof Badges */}
-        <div className="mt-8 flex items-center justify-center gap-6 text-[11px] text-slate-500">
-          <div className="flex items-center gap-1.5">
-            <Check className="w-3.5 h-3.5 text-emerald-600" />
-            <span>No Credit Card Required</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Check className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Instant Setup in 30 Seconds</span>
-          </div>
-          <div className="hidden sm:flex items-center gap-1.5">
-            <Check className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Works Offline & Online</span>
-          </div>
-        </div>
-
-        {/* 3. Hero Visual — Terminal Glass Card */}
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="mt-14 relative rounded-3xl p-1 bg-gradient-to-b from-blue-100/60 to-slate-200/40 shadow-2xl border border-slate-200/80"
-        >
-          <div className="bg-white rounded-[22px] border border-slate-200/80 p-5 sm:p-7 text-left overflow-hidden shadow-sm">
-            {/* Window bar */}
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-rose-400" />
-                <div className="w-3 h-3 rounded-full bg-amber-400" />
-                <div className="w-3 h-3 rounded-full bg-emerald-400" />
-                <span className="text-[11px] text-slate-500 font-mono ml-2">kivo-pos-terminal • v3.0</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-emerald-700 font-mono bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span>0.8s LATENCY</span>
-              </div>
+      <main className="relative z-10">
+        {/* Hero */}
+        <section className="mx-auto max-w-6xl px-4 pb-20 pt-20 text-center sm:px-6 sm:pt-28 lg:pb-28">
+          <FadeIn>
+            <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50/80 px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-600" />
+              Kivo Retail OS
+              <span className="text-blue-300">•</span>
+              Built for the counter
             </div>
+          </FadeIn>
 
-            {/* Mock POS Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              {/* Counter details */}
-              <div className="lg:col-span-2 bg-slate-50 rounded-2xl p-4 border border-slate-200/60 space-y-3">
-                <div className="flex items-center justify-between text-xs text-slate-500 font-medium pb-2 border-b border-slate-200/60">
-                  <span>ITEM</span>
-                  <span>QTY</span>
-                  <span>PRICE</span>
-                </div>
-                <div className="space-y-2 text-xs font-mono">
-                  <div className="flex justify-between items-center text-slate-700">
-                    <span>Amul Butter (500g)</span>
-                    <span className="text-slate-400">× 1</span>
-                    <span className="font-bold text-slate-900">₹275.00</span>
-                  </div>
-                  <div className="flex justify-between items-center text-slate-700">
-                    <span>Aashirvaad Shudh Chakki Atta (10kg)</span>
-                    <span className="text-slate-400">× 1</span>
-                    <span className="font-bold text-slate-900">₹430.00</span>
-                  </div>
-                  <div className="flex justify-between items-center text-slate-700">
-                    <span>Tata Salt Lite (1kg)</span>
-                    <span className="text-slate-400">× 2</span>
-                    <span className="font-bold text-slate-900">₹84.00</span>
-                  </div>
-                </div>
-                <div className="pt-3 border-t border-slate-200/60 flex items-center justify-between">
-                  <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Total Amount</span>
-                  <span className="text-xl font-black text-blue-600 font-mono">₹789.00</span>
-                </div>
-              </div>
+          <FadeIn delay={0.06}>
+            <h1 className="mx-auto mt-7 max-w-5xl text-5xl font-black tracking-[-0.055em] text-slate-950 sm:text-6xl lg:text-8xl lg:leading-[0.98]">
+              Your shop.
+              <br />
+              <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-500 bg-clip-text text-transparent">
+                Simplified.
+              </span>
+            </h1>
+          </FadeIn>
 
-              {/* Action Column */}
-              <div className="bg-gradient-to-br from-blue-50/80 to-indigo-50/50 rounded-2xl p-4 border border-blue-200/60 flex flex-col justify-between space-y-3">
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-blue-600 tracking-wider block">QUICK DISPATCH</span>
-                  <p className="text-xs text-slate-600 mt-1">Press <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-800 font-mono text-[10px] shadow-xs">F6</kbd> to Instant Print</p>
+          <FadeIn delay={0.12}>
+            <p className="mx-auto mt-7 max-w-2xl text-sm leading-7 text-slate-500 sm:text-base">
+              Fast billing, inventory, customers, Udhaar and reports — in one clean workspace built for modern Indian retailers.
+            </p>
+          </FadeIn>
+
+          <FadeIn delay={0.18}>
+            <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+              <Link
+                to="/register"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-blue-600 px-7 text-sm font-bold text-white shadow-xl shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700"
+              >
+                Start free
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <button
+                onClick={() => scrollTo("pricing")}
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-7 text-sm font-bold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50"
+              >
+                View pricing
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </FadeIn>
+
+          <FadeIn delay={0.24}>
+            <div className="mt-7 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[10px] font-semibold text-slate-400">
+              {["Quick setup", "Thermal printing", "Inventory control", "Udhaar management"].map((item) => (
+                <span key={item} className="inline-flex items-center gap-1.5">
+                  <Check className="h-3.5 w-3.5 text-emerald-500" />
+                  {item}
+                </span>
+              ))}
+            </div>
+          </FadeIn>
+
+          {/* Product preview */}
+          <FadeIn delay={0.3} className="mt-14 sm:mt-20">
+            <div className="relative mx-auto max-w-5xl rounded-[28px] border border-slate-200 bg-slate-950 p-2 shadow-[0_35px_100px_rgba(15,23,42,0.20)] sm:rounded-[34px] sm:p-3">
+              <div className="overflow-hidden rounded-[22px] border border-white/10 bg-[#f8fafc] sm:rounded-[27px]">
+                <div className="flex h-11 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6">
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+                    <span className="ml-3 hidden text-[9px] font-bold uppercase tracking-widest text-slate-400 sm:inline">Kivo POS</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[9px] font-bold text-emerald-700">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    LIVE
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs flex items-center gap-2">
-                    <MessageCircle className="w-4 h-4 shrink-0" />
-                    <span className="text-[11px] font-medium">WhatsApp Bill Triggered</span>
+                <div className="grid gap-3 p-3 text-left sm:grid-cols-[1.45fr_0.55fr] sm:p-5">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="mb-4 flex items-center justify-between">
+                      <div>
+                        <p className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-400">New bill</p>
+                        <p className="mt-1 text-sm font-black text-slate-900">Counter #01</p>
+                      </div>
+                      <div className="rounded-lg bg-slate-100 px-2.5 py-1.5 font-mono text-[9px] font-bold text-slate-500">F6 • BILL</div>
+                    </div>
+
+                    <div className="space-y-2">
+                      {[
+                        ["Amul Butter", "1 × ₹275", "₹275"],
+                        ["Aashirvaad Atta", "1 × ₹430", "₹430"],
+                        ["Tata Salt Lite", "2 × ₹42", "₹84"],
+                      ].map(([name, qty, price]) => (
+                        <div key={name} className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2.5">
+                          <div>
+                            <p className="text-[10px] font-bold text-slate-800">{name}</p>
+                            <p className="mt-0.5 text-[9px] text-slate-400">{qty}</p>
+                          </div>
+                          <span className="text-[11px] font-black text-slate-900">{price}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="mt-4 flex items-end justify-between border-t border-slate-100 pt-4">
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Total</span>
+                      <span className="text-2xl font-black tracking-tight text-blue-600">₹789</span>
+                    </div>
                   </div>
-                  <div className="p-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-xs flex items-center gap-2">
-                    <Printer className="w-4 h-4 shrink-0" />
-                    <span className="text-[11px] font-medium">58mm ESC/POS Spooled</span>
+
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-1">
+                    <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4">
+                      <Zap className="h-5 w-5 text-blue-600" />
+                      <p className="mt-5 text-[9px] font-black uppercase tracking-widest text-blue-600">Fast checkout</p>
+                      <p className="mt-1 text-[10px] leading-5 text-slate-600">Keyboard-first billing for busy counters.</p>
+                    </div>
+                    <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
+                      <MessageCircle className="h-5 w-5 text-emerald-600" />
+                      <p className="mt-5 text-[9px] font-black uppercase tracking-widest text-emerald-600">Udhaar</p>
+                      <p className="mt-1 text-[10px] leading-5 text-slate-600">Keep customer balances organised.</p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </motion.div>
+          </FadeIn>
+        </section>
 
-        {/* 4. Feature Bento Grid (Pure Facts, No Fluff) */}
-        <section id="features" className="mt-28 text-left">
-          <div className="text-center max-w-md mx-auto mb-12">
-            <span className="text-xs uppercase font-bold text-blue-600 tracking-widest block mb-2">
-              WHY RETAILERS SWITCH
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-black font-display tracking-tight text-slate-900">
-              Engineered for the Counter.
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {/* Bento Card 1 */}
-            <div className="bg-white border border-slate-200/80 rounded-3xl p-6 hover:border-blue-500/50 hover:shadow-xl transition-all shadow-xs group">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-                <Keyboard className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold font-display text-slate-900">0.8s Keyboard Speed</h3>
-              <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                F1 to search, F2 to change quantity, F6 to bill. Never touch a mouse during busy rush hours.
-              </p>
+        {/* Feature intro */}
+        <section id="features" className="scroll-mt-24 border-y border-slate-200/70 bg-white/60">
+          <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-28">
+            <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
+              <FadeIn>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">Everything in one place</span>
+                <h2 className="mt-4 text-4xl font-black tracking-[-0.04em] text-slate-950 sm:text-5xl">
+                  Less admin.
+                  <br />
+                  More selling.
+                </h2>
+              </FadeIn>
+              <FadeIn delay={0.08}>
+                <p className="max-w-xl text-sm leading-7 text-slate-500 sm:text-base">
+                  Kivo keeps the everyday retail workflow connected, so your team can move from product search to payment without jumping between disconnected tools.
+                </p>
+              </FadeIn>
             </div>
 
-            {/* Bento Card 2 */}
-            <div className="bg-white border border-slate-200/80 rounded-3xl p-6 hover:border-emerald-500/50 hover:shadow-xl transition-all shadow-xs group">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-                <MessageCircle className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold font-display text-slate-900">WhatsApp Udhaar Khata</h3>
-              <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                1-tap digital invoices and automatic payment reminders sent directly to customers on WhatsApp. Never lose credit.
-              </p>
-            </div>
-
-            {/* Bento Card 3 */}
-            <div className="bg-white border border-slate-200/80 rounded-3xl p-6 hover:border-purple-500/50 hover:shadow-xl transition-all shadow-xs group">
-              <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-                <Printer className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold font-display text-slate-900">Thermal Hardware Native</h3>
-              <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                Plug & play with any standard 58mm or 80mm ESC/POS USB or Bluetooth thermal printer without installing drivers.
-              </p>
+            <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {[
+                { icon: Keyboard, title: "Fast POS", text: "Keyboard-first billing designed for rush-hour counters.", tone: "blue" },
+                { icon: Package, title: "Inventory", text: "Products, stock movements and low-stock visibility in one place.", tone: "violet" },
+                { icon: MessageCircle, title: "Udhaar", text: "Customer balances and payment tracking without the notebook.", tone: "emerald" },
+                { icon: TrendingUp, title: "Reports", text: "Turn order data into useful sales and business insights.", tone: "amber" },
+              ].map(({ icon: Icon, title, text, tone }, index) => (
+                <FadeIn key={title} delay={index * 0.05}>
+                  <div className="group h-full rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+                    <div className={
+                      "flex h-11 w-11 items-center justify-center rounded-2xl " +
+                      (tone === "blue" ? "bg-blue-50 text-blue-600" :
+                        tone === "violet" ? "bg-violet-50 text-violet-600" :
+                        tone === "emerald" ? "bg-emerald-50 text-emerald-600" :
+                        "bg-amber-50 text-amber-600")
+                    }>
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <h3 className="mt-6 text-base font-black text-slate-900">{title}</h3>
+                    <p className="mt-2 text-xs leading-6 text-slate-500">{text}</p>
+                    <div className="mt-5 h-px w-8 bg-slate-200 transition-all group-hover:w-14 group-hover:bg-blue-500" />
+                  </div>
+                </FadeIn>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* 5. Pricing Section (Clean, Transparent, No BS) */}
-        <section id="pricing" className="mt-28">
-          <div className="text-center max-w-md mx-auto mb-10">
-            <span className="text-xs uppercase font-bold text-blue-600 tracking-widest block mb-2">
-              PRICING
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-black font-display tracking-tight text-slate-900">
-              Honest Plans. Zero Hidden Fees.
-            </h2>
-            <p className="text-xs text-slate-500 mt-2">
-              Start free. Upgrade when your shop scales.
-            </p>
-
-            {/* Monthly / Annual Switcher */}
-            <div className="mt-6 inline-flex p-1 bg-slate-100 border border-slate-200 rounded-full">
-              <button
-                onClick={() => setBillingCycle("monthly")}
-                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                  billingCycle === "monthly" ? "bg-white text-slate-900 shadow-xs" : "text-slate-500 hover:text-slate-900"
-                }`}
-              >
-                Monthly
-              </button>
-              <button
-                onClick={() => setBillingCycle("annual")}
-                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                  billingCycle === "annual" ? "bg-blue-600 text-white shadow-xs" : "text-slate-500 hover:text-slate-900"
-                }`}
-              >
-                <span>Annual</span>
-                <span className="text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-1.5 py-0.2 rounded-full">20% OFF</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left max-w-4xl mx-auto">
-            {/* Starter Plan */}
-            <div className="bg-white border border-slate-200/80 rounded-3xl p-6 flex flex-col justify-between shadow-xs">
-              <div>
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Starter</span>
-                <div className="mt-3 flex items-baseline gap-1">
-                  <span className="text-3xl font-black font-display text-slate-900">
-                    ₹{billingCycle === "monthly" ? "79" : "799"}
-                  </span>
-                  <span className="text-xs text-slate-500">/{billingCycle === "monthly" ? "mo" : "yr"}</span>
-                </div>
-                <p className="text-xs text-slate-500 mt-2">For single-counter shops & solo retail counters.</p>
-
-                <ul className="mt-6 space-y-2.5 text-xs text-slate-600">
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>Fast POS Billing Engine</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>Unlimited Products & Inventory</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>Basic Order History</span>
-                  </li>
-                </ul>
-              </div>
-
-              <Link
-                to="/subscribe?plan=starter"
-                className="mt-8 w-full h-11 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs flex items-center justify-center transition-all cursor-pointer"
-              >
-                Choose Starter
-              </Link>
-            </div>
-
-            {/* Business Plan (Highlighted Card) */}
-            <div className="relative bg-white border-2 border-blue-600 rounded-3xl p-6 flex flex-col justify-between shadow-2xl shadow-blue-500/10">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full shadow-md">
-                MOST POPULAR
-              </div>
-
-              <div>
-                <span className="text-xs font-bold text-blue-600 uppercase tracking-wider block">Business</span>
-                <div className="mt-3 flex items-baseline gap-1">
-                  <span className="text-3xl font-black font-display text-slate-900">
-                    ₹{billingCycle === "monthly" ? "119" : "1,199"}
-                  </span>
-                  <span className="text-xs text-slate-500">/{billingCycle === "monthly" ? "mo" : "yr"}</span>
-                </div>
-                <p className="text-xs text-slate-600 mt-2">The complete suite with thermal printing & khata.</p>
-
-                <ul className="mt-6 space-y-2.5 text-xs text-slate-700">
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span className="font-semibold text-slate-900">All Starter features</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>58mm / 80mm Thermal Receipts</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>WhatsApp Udhaar Khata Reminders</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Daily Profit & Expense Analytics</span>
-                  </li>
-                </ul>
-              </div>
-
-              <Link
-                to="/subscribe?plan=business"
-                className="mt-8 w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25 active:scale-95 transition-all cursor-pointer"
-              >
-                <span>Upgrade to Business</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-
-            {/* Pro / Annual VIP Plan */}
-            <div className="bg-white border border-slate-200/80 rounded-3xl p-6 flex flex-col justify-between shadow-xs">
-              <div>
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Annual VIP</span>
-                <div className="mt-3 flex items-baseline gap-1">
-                  <span className="text-3xl font-black font-display text-slate-900">
-                    ₹1,499
-                  </span>
-                  <span className="text-xs text-slate-500">/year</span>
-                </div>
-                <p className="text-xs text-slate-500 mt-2">Full year access with priority phone support.</p>
-
-                <ul className="mt-6 space-y-2.5 text-xs text-slate-600">
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>Complete 12-Month Access</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>Custom Shop Name & Logo on Bill</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>Priority WhatsApp Onboarding</span>
-                  </li>
-                </ul>
-              </div>
-
-              <Link
-                to="/subscribe?plan=premium"
-                className="mt-8 w-full h-11 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs flex items-center justify-center transition-all cursor-pointer"
-              >
-                Choose Annual VIP
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        {/* Kivo Product Family */}
-        <section className="mt-24 max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-10">
-            <span className="inline-flex items-center px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-600 text-[10px] font-black uppercase tracking-[0.18em]">
-              Kivo Ecosystem
-            </span>
-            <h2 className="mt-3 text-3xl sm:text-4xl font-black font-display text-slate-900 tracking-tight">
-              One brand. Multiple tools.
-            </h2>
-            <p className="mt-3 text-sm text-slate-500 max-w-xl mx-auto">
-              Explore the Kivo products built for retail operations, teams, subscriptions and merchant workflows.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        {/* Trust strip */}
+        <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+          <div className="grid grid-cols-2 overflow-hidden rounded-3xl border border-slate-200 bg-white sm:grid-cols-4">
             {[
-              { src: "/kivo-pro.png", alt: "Kivo Pro", href: "/pro-plan" },
-              { src: "/kivo-premium.png", alt: "Kivo Premium", href: "/premium-plan" },
-              { src: "/kivo-cafe.png", alt: "Kivo Cafe Plan", href: "/subscribe?plan=cafe" },
-              { src: "/kivo-pro-studio.png", alt: "Kivo Pro Studio", href: "/pro-studio" },
-              { src: "/kivo-ai.png", alt: "Kivo AI", href: "/pro-studio" },
-              { src: "/kivo-grid.png", alt: "Kivo Grid", href: "/app" },
-              { src: "/kivo-admin.png", alt: "Kivo Admin", href: "/admin" },
-            ].map((item) => (
-              <Link
-                key={item.alt}
-                to={item.href}
-                className="group min-h-24 rounded-2xl border border-slate-200 bg-white p-4 flex items-center justify-center shadow-xs hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md transition-all"
-              >
-                <img
-                  src={item.src}
-                  alt={item.alt}
-                  className="max-h-14 max-w-full w-auto object-contain transition-transform group-hover:scale-[1.03]"
-                  loading="lazy"
-                />
-              </Link>
+              { icon: Store, value: "Retail", label: "Built for shops" },
+              { icon: Zap, value: "Fast", label: "Counter workflow" },
+              { icon: Printer, value: "ESC/POS", label: "Thermal ready" },
+              { icon: ShieldCheck, value: "Secure", label: "Server-authoritative data" },
+            ].map(({ icon: Icon, value, label }, index) => (
+              <div key={value} className={"flex items-center gap-3 px-5 py-5 sm:px-6 " + (index > 1 ? "border-t sm:border-t-0" : "") + (index % 2 === 1 ? " border-l" : " sm:border-l")}>
+                <Icon className="h-4 w-4 shrink-0 text-slate-400" />
+                <div>
+                  <p className="text-xs font-black text-slate-900">{value}</p>
+                  <p className="mt-0.5 text-[9px] text-slate-400">{label}</p>
+                </div>
+              </div>
             ))}
           </div>
         </section>
 
-        {/* 6. Direct WhatsApp Floating Action */}
-        <div className="mt-24 p-8 rounded-3xl bg-gradient-to-r from-emerald-50 via-white to-blue-50 border border-emerald-200/80 text-center max-w-3xl mx-auto shadow-sm">
-          <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-700 mx-auto flex items-center justify-center mb-3">
-            <MessageCircle className="w-6 h-6" />
+        {/* Ecosystem */}
+        <section id="ecosystem" className="scroll-mt-24 bg-slate-950 py-20 text-white sm:py-28">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
+              <FadeIn>
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-300">
+                  <Sparkles className="h-3 w-3" />
+                  Kivo ecosystem
+                </span>
+                <h2 className="mt-5 max-w-2xl text-4xl font-black tracking-[-0.04em] sm:text-5xl">
+                  One brand.
+                  <br />
+                  A growing toolkit.
+                </h2>
+              </FadeIn>
+              <FadeIn delay={0.08}>
+                <p className="max-w-sm text-sm leading-6 text-slate-400">
+                  Explore the Kivo products built around your retail workflow.
+                </p>
+              </FadeIn>
+            </div>
+
+            <div className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
+              {ecosystem.map((item, index) => (
+                <FadeIn key={item.alt} delay={index * 0.035}>
+                  <Link
+                    to={item.href}
+                    className="group flex min-h-32 flex-col items-center justify-between rounded-2xl border border-white/10 bg-white/[0.045] p-4 transition duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.08]"
+                  >
+                    <img src={item.src} alt={item.alt} loading="lazy" className="max-h-12 w-auto max-w-full object-contain transition duration-300 group-hover:scale-105" />
+                    <span className="flex w-full items-center justify-between text-[10px] font-bold text-slate-400">
+                      {item.label}
+                      <ArrowRight className="h-3 w-3 opacity-0 transition group-hover:opacity-100" />
+                    </span>
+                  </Link>
+                </FadeIn>
+              ))}
+            </div>
           </div>
-          <h3 className="text-xl font-bold font-display text-slate-900">Need help setting up your store?</h3>
-          <p className="text-xs text-slate-600 mt-1.5 max-w-md mx-auto">
-            Speak directly with our team on WhatsApp for hardware support, barcode scanners, or thermal printer setup.
-          </p>
-          <a
-            href="https://wa.me/919876543210?text=Hi%2C%20I%20want%20to%20set%20up%20Kivo%20POS%20for%20my%20shop"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-5 inline-flex items-center gap-2 h-11 px-6 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-lg shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer"
-          >
-            <MessageCircle className="w-4 h-4" />
-            <span>Chat on WhatsApp (Instant Reply)</span>
-          </a>
-        </div>
+        </section>
+
+        {/* Pricing */}
+        <section id="pricing" className="scroll-mt-24 bg-[#f7f8fa] px-4 py-20 sm:px-6 lg:py-28">
+          <div className="mx-auto max-w-6xl">
+            <FadeIn className="text-center">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">Simple pricing</span>
+              <h2 className="mt-4 text-4xl font-black tracking-[-0.04em] text-slate-950 sm:text-5xl">Start small. Scale when ready.</h2>
+              <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-slate-500">
+                Pick the plan that matches your counter today. You can change your plan as your shop grows.
+              </p>
+
+              <div className="mx-auto mt-7 inline-flex rounded-full border border-slate-200 bg-white p-1 shadow-sm">
+                <button
+                  onClick={() => setBillingCycle("monthly")}
+                  className={"rounded-full px-5 py-2 text-[11px] font-bold transition " + (billingCycle === "monthly" ? "bg-slate-950 text-white shadow" : "text-slate-500 hover:text-slate-900")}
+                >
+                  Monthly
+                </button>
+                <button
+                  onClick={() => setBillingCycle("annual")}
+                  className={"rounded-full px-5 py-2 text-[11px] font-bold transition " + (billingCycle === "annual" ? "bg-blue-600 text-white shadow" : "text-slate-500 hover:text-slate-900")}
+                >
+                  Annual
+                </button>
+              </div>
+            </FadeIn>
+
+            <div className="mt-10 grid gap-4 lg:grid-cols-3">
+              {plans[billingCycle].map((plan, index) => (
+                <FadeIn key={plan.name} delay={index * 0.06}>
+                  <div className={
+                    "relative flex h-full flex-col rounded-3xl border p-6 sm:p-7 " +
+                    (plan.featured
+                      ? "border-blue-500 bg-slate-950 text-white shadow-[0_25px_70px_rgba(37,99,235,0.18)]"
+                      : "border-slate-200 bg-white text-slate-950 shadow-sm")
+                  }>
+                    {plan.featured && (
+                      <span className="absolute -top-3 left-6 rounded-full bg-blue-600 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-white">
+                        Popular
+                      </span>
+                    )}
+                    <p className={"text-[10px] font-black uppercase tracking-[0.18em] " + (plan.featured ? "text-blue-300" : "text-slate-400")}>{plan.name}</p>
+                    <div className="mt-4 flex items-baseline gap-1">
+                      <span className="text-4xl font-black tracking-tight">₹{plan.price}</span>
+                      <span className={"text-xs " + (plan.featured ? "text-slate-400" : "text-slate-500")}>{plan.suffix}</span>
+                    </div>
+                    <p className={"mt-3 min-h-12 text-xs leading-5 " + (plan.featured ? "text-slate-400" : "text-slate-500")}>{plan.description}</p>
+
+                    <ul className="mt-7 space-y-3">
+                      {plan.features.map((feature) => (
+                        <li key={feature} className="flex items-start gap-2.5 text-xs">
+                          <Check className={"mt-0.5 h-4 w-4 shrink-0 " + (plan.featured ? "text-blue-400" : "text-emerald-500")} />
+                          <span className={plan.featured ? "text-slate-200" : "text-slate-600"}>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    <Link
+                      to={plan.href}
+                      className={
+                        "mt-8 flex h-11 items-center justify-center gap-2 rounded-xl text-xs font-bold transition " +
+                        (plan.featured
+                          ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20 hover:bg-blue-500"
+                          : "bg-slate-100 text-slate-900 hover:bg-slate-200")
+                      }
+                    >
+                      {plan.cta}
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </Link>
+                  </div>
+                </FadeIn>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* CTA */}
+        <section className="px-4 pb-20 sm:px-6 lg:pb-28">
+          <FadeIn>
+            <div className="mx-auto max-w-5xl overflow-hidden rounded-[32px] bg-gradient-to-br from-blue-600 via-indigo-600 to-slate-950 px-6 py-12 text-center text-white shadow-2xl shadow-blue-900/15 sm:px-10 sm:py-16">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/15">
+                <MessageCircle className="h-6 w-6" />
+              </div>
+              <h2 className="mx-auto mt-5 max-w-2xl text-3xl font-black tracking-[-0.035em] sm:text-4xl">Ready to simplify your counter?</h2>
+              <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-blue-100">
+                Start with Kivo and build your daily retail workflow in one place.
+              </p>
+              <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+                <Link to="/register" className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-white px-6 text-xs font-black text-slate-950 transition hover:bg-blue-50">
+                  Start free
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <a
+                  href="https://wa.me/919876543210?text=Hi%2C%20I%20want%20to%20set%20up%20Kivo%20POS%20for%20my%20shop"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 px-6 text-xs font-bold text-white transition hover:bg-white/15"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  Talk to Kivo
+                </a>
+              </div>
+            </div>
+          </FadeIn>
+        </section>
       </main>
 
-      {/* 7. Clean Minimalist Footer */}
-      <footer className="border-t border-slate-200 py-10 text-center text-xs text-slate-500 relative z-10 bg-white/50">
-        <div className="flex justify-center mb-5">
-          <div className="flex items-center px-3 py-1 rounded-xl bg-white shadow-xs border border-slate-200/60">
-            <img src="/kivo-logo.png" alt="Kivo" className="h-7 w-auto object-contain" />
+      <footer className="border-t border-slate-200 bg-white px-4 py-10 sm:px-6">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 sm:flex-row">
+          <Link to="/" className="flex items-center gap-2.5">
+            <img src="/kivo-logo.png" alt="Kivo" className="h-7 w-auto" />
+            <span className="text-[10px] font-semibold text-slate-400">Business Made Simple</span>
+          </Link>
+          <div className="flex flex-wrap items-center justify-center gap-5 text-[10px] font-semibold text-slate-400">
+            <Link to="/privacy-policy" className="transition hover:text-slate-900">Privacy</Link>
+            <Link to="/refund-policy" className="transition hover:text-slate-900">Refunds</Link>
+            <a href="mailto:contact@officialdukaan.in" className="transition hover:text-slate-900">Support</a>
           </div>
+          <p className="text-[10px] text-slate-400">© 2026 Kivo · PEAN</p>
         </div>
-        <div className="flex flex-wrap items-center justify-center gap-6 mb-3 text-slate-500 font-medium">
-          <Link to="/privacy-policy" className="hover:text-blue-600 transition-colors">Privacy Policy</Link>
-          <Link to="/refund-policy" className="hover:text-blue-600 transition-colors">Refund Policy</Link>
-          <a href="mailto:contact@officialdukaan.in" className="hover:text-blue-600 transition-colors">Support</a>
-        </div>
-        <p className="font-mono text-[11px] text-slate-400">© 2026 Kivo · Business Made Simple · All rights reserved.</p>
       </footer>
     </div>
   );
