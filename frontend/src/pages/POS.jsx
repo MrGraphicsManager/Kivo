@@ -748,32 +748,7 @@ export default function POS() {
     }
   };
 
-  // Dukaan 3.0 Split Payment Processor
-  const handleSplitPaymentConfirm = ({ payment_mode, split }) => {
-    if (cart.length === 0) {
-      toast.error("Cart is empty");
-      return;
-    }
-
-    const orderId = `ord_${Date.now()}`;
-    const orderNo = `OD-${Date.now().toString().slice(-4)}`;
-    const now = new Date();
-
-    const order = {
-      id: orderId,
-      order_no: orderNo,
-      total,
-      subtotal,
-      discount: discountAmount,
-      payment_method: "split",
-      split_breakdown: split,
-      status: split.khata > 0 ? "partial_udhaar" : "paid",
-      pending_amount: split.khata || 0,
-      paid_amount: (split.cash || 0) + (split.upi || 0) + (split.card || 0),
-      customer_id: split.khata_customer_id || customerId || null,
-      customer_name: selectedCustomerObj?.name || "Split Payment Customer",
-      customer_phone: selectedCustomerObj  // Split payment is not persisted locally. Until the backend supports split tender atomically,
-  // route the user through the standard server-authoritative checkout instead.
+  // Split tender remains disabled until the backend supports atomic multi-tender checkout.
   const handleSplitPaymentConfirm = () => {
     setSplitPaymentOpen(false);
     toast.error("Split payment is temporarily unavailable. Use Cash, UPI, or Udhaar.");
