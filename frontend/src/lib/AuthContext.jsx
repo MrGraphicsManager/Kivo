@@ -442,3 +442,7 @@ export function AuthProvider({ children }) {
 }
 
 export const useAuth = () => useContext(AuthCtx);
+
+
+// Backward-compatible UI helper; server auth remains the source of truth.
+export const getPersistentSubscription = () => null;
