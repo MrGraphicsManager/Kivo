@@ -211,19 +211,6 @@ export function AuthProvider({ children }) {
       }
 
       return { ok: false, error: formatApiError(detail) || "Unable to sign in. Please try again." };
-    } catch (err) {
-      if (err.response?.status === 409) {
-        return { ok: false, error: "An account with this email already exists. Please sign in." };
-      }
-      if (err.response?.data?.detail) {
-        return { ok: false, error: formatApiError(err.response.data.detail) };
-      }
-
-      return {
-        ok: false,
-        error: formatApiError(err.response?.data?.detail) || "Registration failed. Please try again."
-      };
-    }
   };
 
   const verifyEmail = async (email, codeOrToken) => {
