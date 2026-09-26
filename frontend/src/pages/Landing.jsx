@@ -1,484 +1,461 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { 
-  Zap, 
-  ArrowRight, 
-  Check, 
-  Sparkles, 
-  MessageCircle, 
-  Printer, 
-  ShieldCheck, 
-  Store, 
-  TrendingUp, 
-  CreditCard, 
-  Keyboard, 
-  Smartphone, 
-  ChevronRight, 
-  Star 
+import React from "react";
+import { Link } from "react-router-dom";
+import { motion, useReducedMotion } from "framer-motion";
+import {
+  ArrowRight,
+  BarChart3,
+  Check,
+  CircleDollarSign,
+  ClipboardList,
+  Package,
+  Receipt,
+  RefreshCw,
+  Sparkles,
+  Store,
+  Users,
 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 
-export default function Landing() {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const [billingCycle, setBillingCycle] = useState("monthly"); // "monthly" | "annual"
+const ecosystem = [
+  { src: "/kivo-pro.png", alt: "Kivo Pro", href: "/pro-plan", label: "Kivo Pro" },
+  { src: "/kivo-premium.png", alt: "Kivo Premium", href: "/premium-plan", label: "Kivo Premium" },
+  { src: "/kivo-cafe.png", alt: "Kivo Cafe Plan", href: "/subscribe?plan=cafe", label: "Kivo Cafe Plan" },
+  { src: "/kivo-pro-studio.png", alt: "Kivo Pro Studio", href: "/pro-studio", label: "Kivo Pro Studio" },
+  { src: "/kivo-ai.png", alt: "Kivo AI", href: "/pro-studio", label: "Kivo AI" },
+  { src: "/kivo-grid.png", alt: "Kivo Grid", href: "/app", label: "Kivo Grid" },
+  { src: "/kivo-admin.png", alt: "Kivo Admin", href: "/admin", label: "Kivo Admin" },
+];
 
-  const scrollToPricing = () => {
-    document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
-  };
+const features = [
+  {
+    number: "01",
+    icon: Receipt,
+    name: "Billing",
+    title: "Every sale, organised.",
+    text: "Create bills, record payments and keep the daily checkout workflow clear and connected.",
+    points: ["Cash and UPI payments", "Thermal receipt support", "Server-backed orders"],
+  },
+  {
+    number: "02",
+    icon: Package,
+    name: "Inventory",
+    title: "Know your stock.",
+    text: "Manage products, adjust stock and keep inventory activity connected to the orders you record.",
+    points: ["Product catalogue", "Stock adjustments", "Low-stock visibility"],
+  },
+  {
+    number: "03",
+    icon: Users,
+    name: "Customers",
+    title: "Keep customer records close.",
+    text: "Store customer details and connect them with the transactions and activity that matter.",
+    points: ["Customer records", "Order history", "Customer-linked billing"],
+  },
+  {
+    number: "04",
+    icon: CircleDollarSign,
+    name: "Udhaar",
+    title: "Replace the scattered notebook.",
+    text: "Keep balances and payments in a structured customer ledger that is easier to follow.",
+    points: ["Udhaar balances", "Payment tracking", "Customer-linked ledger"],
+  },
+  {
+    number: "05",
+    icon: ClipboardList,
+    name: "Orders",
+    title: "One place for orders.",
+    text: "Keep your order history connected to payments, products and the rest of your workflow.",
+    points: ["Order history", "Payment status", "Stock-aware checkout"],
+  },
+  {
+    number: "06",
+    icon: BarChart3,
+    name: "Reports",
+    title: "Turn records into understanding.",
+    text: "Use recorded business activity to review sales, orders and day-to-day performance.",
+    points: ["Sales reporting", "Order-based insights", "Business summaries"],
+  },
+];
+
+const plans = [
+  {
+    name: "Starter",
+    price: "79",
+    suffix: "/mo",
+    text: "For a single counter getting started.",
+    features: ["Fast POS Billing Engine", "Unlimited Products & Inventory", "Basic Order History"],
+    href: "/subscribe?plan=starter",
+  },
+  {
+    name: "Business",
+    price: "119",
+    suffix: "/mo",
+    text: "For a growing retail workflow.",
+    features: ["All Starter features", "58mm / 80mm Thermal Receipts", "WhatsApp Udhaar Khata Reminders", "Daily Profit & Expense Analytics"],
+    href: "/subscribe?plan=business",
+    featured: true,
+  },
+  {
+    name: "Annual VIP",
+    price: "1,499",
+    suffix: "/yr",
+    text: "Full-year access with premium billing tools.",
+    features: ["Complete 12-Month Access", "Custom Shop Name & Logo on Bill", "Priority WhatsApp Onboarding"],
+    href: "/subscribe?plan=premium",
+  },
+];
+
+function Reveal({ children, delay = 0, distance = 42, className = "" }) {
+  const reduced = useReducedMotion();
+  return (
+    <motion.div
+      className={className}
+      initial={{ opacity: 0, y: reduced ? 0 : distance }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: false, amount: 0.18 }}
+      transition={{
+        duration: reduced ? 0.01 : 0.7,
+        delay: reduced ? 0 : delay,
+        ease: [0.22, 1, 0.36, 1],
+      }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function Rule() {
+  return <div className="h-px w-full bg-[#d6d5cd]" />;
+}
+
+function Label({ children, light = false }) {
+  return (
+    <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${light ? "text-[#aaa99f]" : "text-[#77766e]"}`}>
+      {children}
+    </span>
+  );
+}
+
+export default function Landing() {
+  const { user } = useAuth();
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans selection:bg-blue-600/20 selection:text-blue-700 relative overflow-x-hidden">
-      {/* Ambient background glows */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[450px] bg-gradient-to-b from-blue-400/10 via-indigo-400/5 to-transparent blur-[120px] rounded-full" />
-        <div className="absolute top-[40%] right-[-10%] w-[500px] h-[500px] bg-sky-400/10 blur-[140px] rounded-full" />
-        <div className="absolute bottom-10 left-[-10%] w-[500px] h-[500px] bg-indigo-400/10 blur-[140px] rounded-full" />
-      </div>
-
-      {/* 1. Sleek Floating Header */}
-      <header className="sticky top-4 z-50 max-w-5xl mx-auto px-4">
-        <nav className="bg-white/85 backdrop-blur-xl border border-slate-200/80 rounded-full px-5 py-3 flex items-center justify-between shadow-lg shadow-slate-200/40">
-          {/* Official Kivo Brand Logo */}
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="flex items-center px-1.5 py-0.5 rounded-xl group-hover:scale-105 transition-transform">
-              <img src="/kivo-logo.png" alt="Kivo - Business Made Simple" className="h-7 sm:h-8 w-auto object-contain" />
-            </div>
-            <span className="hidden sm:inline-block text-[10px] font-bold font-mono uppercase tracking-widest text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200">
-              Retail OS
+    <div className="min-h-screen overflow-x-hidden bg-[#e9e9e2] text-[#171716] selection:bg-[#b9c0a9] selection:text-[#171716]">
+      <header className="sticky top-0 z-50 border-b border-black/10 bg-[#e9e9e2]/95 backdrop-blur-md">
+        <nav className="mx-auto flex max-w-[1180px] items-center justify-between px-4 py-4 sm:px-6">
+          <Link to="/" className="flex items-center gap-3">
+            <img src="/kivo-logo.png" alt="Kivo" className="h-8 w-auto object-contain" />
+            <span className="hidden rounded-full bg-[#d8d8d0] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-[#55544d] sm:block">
+              Business OS
             </span>
           </Link>
 
-          {/* Nav links */}
-          <div className="hidden md:flex items-center gap-7 text-xs font-semibold text-slate-600">
-            <a href="#features" className="hover:text-blue-600 transition-colors">Features</a>
-            <a href="#speed" className="hover:text-blue-600 transition-colors">Why 0.8s?</a>
-            <a href="#pricing" className="hover:text-blue-600 transition-colors">Pricing</a>
+          <div className="hidden items-center gap-8 text-[12px] font-bold md:flex">
+            <a href="#work" className="transition-opacity hover:opacity-60">Features</a>
+            <a href="#ecosystem" className="transition-opacity hover:opacity-60">Ecosystem</a>
+            <a href="#pricing" className="transition-opacity hover:opacity-60">Pricing</a>
           </div>
 
-          {/* Actions */}
-          <div className="flex items-center gap-3">
-            {user ? (
-              <Link
-                to="/app/pos"
-                className="h-9 px-4 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-blue-500/25 transition-all cursor-pointer"
-              >
-                <span>Launch POS</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+          <div className="flex items-center gap-2">
+            {!user && (
+              <Link to="/login" className="hidden px-3 py-2 text-[12px] font-bold sm:block">
+                Sign in
               </Link>
-            ) : (
-              <>
-                <Link
-                  to="/login"
-                  className="text-xs font-semibold text-slate-600 hover:text-slate-900 px-3 py-1.5 transition-colors hidden sm:block"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  to="/register"
-                  className="h-9 px-4.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-blue-500/25 active:scale-95 transition-all cursor-pointer"
-                >
-                  <span>Get Started</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </>
             )}
+            <Link
+              to={user ? "/app" : "/register"}
+              className="rounded-full bg-[#171716] px-4 py-2.5 text-[11px] font-black text-white transition-transform hover:-translate-y-0.5"
+            >
+              {user ? "Open Kivo ↗" : "Start with Kivo ↗"}
+            </Link>
           </div>
         </nav>
       </header>
 
-      {/* 2. Hero Section */}
-      <main className="relative z-10 pt-16 md:pt-24 pb-20 px-4 max-w-5xl mx-auto text-center">
-        {/* Gen-Z Electric Pill */}
-        <motion.div 
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-xs font-medium text-blue-700 mb-6 shadow-xs"
-        >
-          <span className="w-2 h-2 rounded-full bg-blue-600 animate-ping" />
-          <span className="font-bold tracking-wide uppercase text-[10px]">Kivo Retail OS</span>
-          <span className="text-slate-300">•</span>
-          <span className="text-slate-700">0.8s Sub-Second Engine</span>
-        </motion.div>
+      <main>
+        <section className="mx-auto max-w-[1180px] px-5 pb-16 pt-16 sm:px-6 sm:pb-28 sm:pt-28">
+          <Reveal>
+            <Label>KIVO • BUSINESS • RETAIL</Label>
+          </Reveal>
 
-        {/* Main Punchy Headline */}
-        <motion.h1 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[1.08] font-display max-w-4xl mx-auto text-slate-900"
-        >
-          Run Your Counter. <br />
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600">
-            Kill The Queue.
-          </span>
-        </motion.h1>
+          <Reveal delay={0.08} distance={70}>
+            <h1 className="mt-7 max-w-[980px] font-serif text-[clamp(3.15rem,9vw,8.2rem)] font-bold leading-[0.88] tracking-[-0.065em]">
+              Run your business.
+              <em className="block font-serif font-normal text-[#5c6354]">Keep it simple.</em>
+            </h1>
+          </Reveal>
 
-        {/* Short, No-BS Subhead */}
-        <motion.p 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="mt-6 text-sm sm:text-base text-slate-600 max-w-xl mx-auto leading-relaxed"
-        >
-          The lightning-fast billing software built for Indian retailers. 
-          Instant keyboard checkout, ESC/POS thermal printing, and 1-tap WhatsApp Udhaar recovery. 
-          <strong className="text-slate-900"> Zero lag. Zero bloat.</strong>
-        </motion.p>
-
-        {/* Hero CTAs */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5"
-        >
-          <Link
-            to="/register"
-            className="w-full sm:w-auto h-12 px-7 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-xl shadow-blue-500/25 flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
-          >
-            <span>Start Free Trial</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-
-          <button
-            onClick={scrollToPricing}
-            className="w-full sm:w-auto h-12 px-6 rounded-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-sm flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer"
-          >
-            <span>View Pricing (From ₹79/mo)</span>
-          </button>
-        </motion.div>
-
-        {/* Social Proof Badges */}
-        <div className="mt-8 flex items-center justify-center gap-6 text-[11px] text-slate-500">
-          <div className="flex items-center gap-1.5">
-            <Check className="w-3.5 h-3.5 text-emerald-600" />
-            <span>No Credit Card Required</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Check className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Instant Setup in 30 Seconds</span>
-          </div>
-          <div className="hidden sm:flex items-center gap-1.5">
-            <Check className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Works Offline & Online</span>
-          </div>
-        </div>
-
-        {/* 3. Hero Visual — Terminal Glass Card */}
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="mt-14 relative rounded-3xl p-1 bg-gradient-to-b from-blue-100/60 to-slate-200/40 shadow-2xl border border-slate-200/80"
-        >
-          <div className="bg-white rounded-[22px] border border-slate-200/80 p-5 sm:p-7 text-left overflow-hidden shadow-sm">
-            {/* Window bar */}
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-rose-400" />
-                <div className="w-3 h-3 rounded-full bg-amber-400" />
-                <div className="w-3 h-3 rounded-full bg-emerald-400" />
-                <span className="text-[11px] text-slate-500 font-mono ml-2">kivo-pos-terminal • v3.0</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-emerald-700 font-mono bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span>0.8s LATENCY</span>
+          <Reveal delay={0.16}>
+            <div className="mt-8 grid gap-7 border-t border-[#bdbcb4] pt-6 sm:mt-10 sm:gap-8 sm:pt-7 md:grid-cols-[1fr_0.55fr] md:items-end">
+              <p className="max-w-[650px] text-base leading-7 text-[#5d5c55] sm:text-lg">
+                Kivo brings the everyday work of a shop into one connected system — billing, inventory, customers, Udhaar, orders and reports.
+              </p>
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row md:justify-end">
+                <Link to={user ? "/app" : "/register"} className="w-full rounded-full bg-[#171716] px-5 py-3 text-center text-[11px] font-black text-white sm:w-auto">
+                  {user ? "Open Kivo" : "Get started"} ↗
+                </Link>
+                <a href="#work" className="w-full rounded-full border border-[#aaa99f] bg-transparent px-5 py-3 text-center text-[11px] font-black sm:w-auto">
+                  Explore ↓
+                </a>
               </div>
             </div>
+          </Reveal>
 
-            {/* Mock POS Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              {/* Counter details */}
-              <div className="lg:col-span-2 bg-slate-50 rounded-2xl p-4 border border-slate-200/60 space-y-3">
-                <div className="flex items-center justify-between text-xs text-slate-500 font-medium pb-2 border-b border-slate-200/60">
-                  <span>ITEM</span>
-                  <span>QTY</span>
-                  <span>PRICE</span>
-                </div>
-                <div className="space-y-2 text-xs font-mono">
-                  <div className="flex justify-between items-center text-slate-700">
-                    <span>Amul Butter (500g)</span>
-                    <span className="text-slate-400">× 1</span>
-                    <span className="font-bold text-slate-900">₹275.00</span>
-                  </div>
-                  <div className="flex justify-between items-center text-slate-700">
-                    <span>Aashirvaad Shudh Chakki Atta (10kg)</span>
-                    <span className="text-slate-400">× 1</span>
-                    <span className="font-bold text-slate-900">₹430.00</span>
-                  </div>
-                  <div className="flex justify-between items-center text-slate-700">
-                    <span>Tata Salt Lite (1kg)</span>
-                    <span className="text-slate-400">× 2</span>
-                    <span className="font-bold text-slate-900">₹84.00</span>
-                  </div>
-                </div>
-                <div className="pt-3 border-t border-slate-200/60 flex items-center justify-between">
-                  <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Total Amount</span>
-                  <span className="text-xl font-black text-blue-600 font-mono">₹789.00</span>
-                </div>
+          <Reveal delay={0.25} distance={24}>
+            <div className="mt-12 flex items-center justify-center gap-3 text-center text-[9px] font-black uppercase tracking-[0.22em] text-[#85847b] sm:mt-16">
+              <span className="h-px w-12 bg-[#aaa99f]" />
+              Scroll to explore
+              <span className="h-px w-12 bg-[#aaa99f]" />
+            </div>
+          </Reveal>
+        </section>
+
+        <div className="overflow-hidden border-y border-[#171716] bg-[#171716] py-4 text-white">
+          <motion.div
+            className="flex min-w-max items-center gap-8 whitespace-nowrap text-[10px] font-black uppercase tracking-[0.2em]"
+            animate={{ x: ["0%", "-50%"] }}
+            transition={{ duration: 22, repeat: Infinity, ease: "linear" }}
+          >
+            {Array.from({ length: 2 }).flatMap(() =>
+              ["BILLING", "INVENTORY", "CUSTOMERS", "UDHAAR", "ORDERS", "REPORTS", "KIVO"].map((item, i) => (
+                <React.Fragment key={item + i + Math.random()}>
+                  <span>{item}</span>
+                  <span className="text-[#b9c0a9]">✦</span>
+                </React.Fragment>
+              ))
+            )}
+          </motion.div>
+        </div>
+
+        <section id="work" className="mx-auto max-w-[1180px] px-5 py-20 sm:px-6 sm:py-32">
+          <Reveal>
+            <div className="grid gap-8 md:grid-cols-[1fr_0.7fr] md:items-end">
+              <div>
+                <Label>THE CORE</Label>
+                <h2 className="mt-4 max-w-[720px] font-serif text-4xl font-bold tracking-[-0.045em] sm:text-6xl">
+                  The work behind a better business day.
+                </h2>
               </div>
+              <p className="text-sm leading-7 text-[#68675f]">
+                Kivo is designed around the actual flow of business. Record what happens, keep the important pieces connected, and review the result.
+              </p>
+            </div>
+          </Reveal>
 
-              {/* Action Column */}
-              <div className="bg-gradient-to-br from-blue-50/80 to-indigo-50/50 rounded-2xl p-4 border border-blue-200/60 flex flex-col justify-between space-y-3">
+          <div className="mt-12 sm:mt-16">
+            {features.map((feature, index) => {
+              const Icon = feature.icon;
+              return (
+                <div key={feature.number}>
+                  <Rule />
+                  <Reveal delay={0.04} distance={55} className="py-12 sm:py-20">
+                    <div className="grid gap-8 md:grid-cols-[80px_1fr_0.85fr]">
+                      <div className="text-[11px] font-black text-[#96958c]">{feature.number}</div>
+                      <div>
+                        <div className="flex items-center gap-3">
+                          <Icon size={19} strokeWidth={2.2} />
+                          <Label>{feature.name}</Label>
+                        </div>
+                        <h3 className="mt-4 max-w-[620px] font-serif text-[2rem] font-bold leading-[1.02] tracking-[-0.035em] sm:mt-5 sm:text-5xl">
+                          {feature.title}
+                        </h3>
+                      </div>
+                      <div>
+                        <p className="text-sm leading-7 text-[#626159]">{feature.text}</p>
+                        <ul className="mt-5 space-y-3 sm:mt-6">
+                          {feature.points.map((point) => (
+                            <li key={point} className="flex items-center gap-2 text-[12px] font-bold">
+                              <Check size={14} /> {point}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </Reveal>
+                  {index === features.length - 1 && <Rule />}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="bg-[#171716] py-24 text-white sm:py-32">
+          <div className="mx-auto max-w-[1180px] px-4 sm:px-6">
+            <Reveal>
+              <div className="grid gap-8 md:grid-cols-[1fr_0.65fr] md:items-end">
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-blue-600 tracking-wider block">QUICK DISPATCH</span>
-                  <p className="text-xs text-slate-600 mt-1">Press <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-800 font-mono text-[10px] shadow-xs">F6</kbd> to Instant Print</p>
+                  <Label light>HOW IT CONNECTS</Label>
+                  <h2 className="mt-4 max-w-[700px] font-serif text-4xl font-bold tracking-[-0.045em] sm:text-6xl">
+                    One business flow. Less jumping around.
+                  </h2>
                 </div>
+                <p className="text-sm leading-7 text-[#a7a69d]">
+                  The same business activity can support multiple parts of your workflow instead of being entered and maintained separately.
+                </p>
+              </div>
+            </Reveal>
 
-                <div className="space-y-2">
-                  <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs flex items-center gap-2">
-                    <MessageCircle className="w-4 h-4 shrink-0" />
-                    <span className="text-[11px] font-medium">WhatsApp Bill Triggered</span>
+            <div className="mt-16 grid grid-cols-2 border-t border-[#393936] sm:grid-cols-3 lg:grid-cols-6">
+              {[
+                [Receipt, "Billing"],
+                [Package, "Inventory"],
+                [Users, "Customers"],
+                [CircleDollarSign, "Udhaar"],
+                [ClipboardList, "Orders"],
+                [BarChart3, "Reports"],
+              ].map(([Icon, name], i) => (
+                <Reveal key={name} delay={i * 0.06} distance={30}>
+                  <div className="border-b border-r border-[#393936] p-6 sm:p-8">
+                    <Icon size={21} className="text-[#b9c0a9]" />
+                    <div className="mt-12 flex items-end justify-between gap-3">
+                      <span className="text-sm font-black">{name}</span>
+                      <span className="text-[10px] text-[#77766e]">0{i + 1}</span>
+                    </div>
                   </div>
-                  <div className="p-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-xs flex items-center gap-2">
-                    <Printer className="w-4 h-4 shrink-0" />
-                    <span className="text-[11px] font-medium">58mm ESC/POS Spooled</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* 4. Feature Bento Grid (Pure Facts, No Fluff) */}
-        <section id="features" className="mt-28 text-left">
-          <div className="text-center max-w-md mx-auto mb-12">
-            <span className="text-xs uppercase font-bold text-blue-600 tracking-widest block mb-2">
-              WHY RETAILERS SWITCH
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-black font-display tracking-tight text-slate-900">
-              Engineered for the Counter.
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {/* Bento Card 1 */}
-            <div className="bg-white border border-slate-200/80 rounded-3xl p-6 hover:border-blue-500/50 hover:shadow-xl transition-all shadow-xs group">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-                <Keyboard className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold font-display text-slate-900">0.8s Keyboard Speed</h3>
-              <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                F1 to search, F2 to change quantity, F6 to bill. Never touch a mouse during busy rush hours.
-              </p>
-            </div>
-
-            {/* Bento Card 2 */}
-            <div className="bg-white border border-slate-200/80 rounded-3xl p-6 hover:border-emerald-500/50 hover:shadow-xl transition-all shadow-xs group">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-                <MessageCircle className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold font-display text-slate-900">WhatsApp Udhaar Khata</h3>
-              <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                1-tap digital invoices and automatic payment reminders sent directly to customers on WhatsApp. Never lose credit.
-              </p>
-            </div>
-
-            {/* Bento Card 3 */}
-            <div className="bg-white border border-slate-200/80 rounded-3xl p-6 hover:border-purple-500/50 hover:shadow-xl transition-all shadow-xs group">
-              <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-                <Printer className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold font-display text-slate-900">Thermal Hardware Native</h3>
-              <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                Plug & play with any standard 58mm or 80mm ESC/POS USB or Bluetooth thermal printer without installing drivers.
-              </p>
+                </Reveal>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* 5. Pricing Section (Clean, Transparent, No BS) */}
-        <section id="pricing" className="mt-28">
-          <div className="text-center max-w-md mx-auto mb-10">
-            <span className="text-xs uppercase font-bold text-blue-600 tracking-widest block mb-2">
-              PRICING
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-black font-display tracking-tight text-slate-900">
-              Honest Plans. Zero Hidden Fees.
+        <section id="ecosystem" className="mx-auto max-w-[1180px] px-5 py-20 sm:px-6 sm:py-32">
+          <Reveal>
+            <Label>THE ECOSYSTEM</Label>
+            <h2 className="mt-4 max-w-[760px] font-serif text-4xl font-bold tracking-[-0.045em] sm:text-6xl">
+              Kivo is more than one screen.
             </h2>
-            <p className="text-xs text-slate-500 mt-2">
-              Start free. Upgrade when your shop scales.
+            <p className="mt-6 max-w-[620px] text-sm leading-7 text-[#68675f]">
+              Explore the products and tools around the Kivo business ecosystem.
             </p>
+          </Reveal>
 
-            {/* Monthly / Annual Switcher */}
-            <div className="mt-6 inline-flex p-1 bg-slate-100 border border-slate-200 rounded-full">
-              <button
-                onClick={() => setBillingCycle("monthly")}
-                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                  billingCycle === "monthly" ? "bg-white text-slate-900 shadow-xs" : "text-slate-500 hover:text-slate-900"
-                }`}
-              >
-                Monthly
-              </button>
-              <button
-                onClick={() => setBillingCycle("annual")}
-                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                  billingCycle === "annual" ? "bg-blue-600 text-white shadow-xs" : "text-slate-500 hover:text-slate-900"
-                }`}
-              >
-                <span>Annual</span>
-                <span className="text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-1.5 py-0.2 rounded-full">20% OFF</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left max-w-4xl mx-auto">
-            {/* Starter Plan */}
-            <div className="bg-white border border-slate-200/80 rounded-3xl p-6 flex flex-col justify-between shadow-xs">
-              <div>
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Starter</span>
-                <div className="mt-3 flex items-baseline gap-1">
-                  <span className="text-3xl font-black font-display text-slate-900">
-                    ₹{billingCycle === "monthly" ? "79" : "799"}
-                  </span>
-                  <span className="text-xs text-slate-500">/{billingCycle === "monthly" ? "mo" : "yr"}</span>
-                </div>
-                <p className="text-xs text-slate-500 mt-2">For single-counter shops & solo retail counters.</p>
-
-                <ul className="mt-6 space-y-2.5 text-xs text-slate-600">
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>Fast POS Billing Engine</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>Unlimited Products & Inventory</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>Basic Order History</span>
-                  </li>
-                </ul>
-              </div>
-
-              <Link
-                to="/subscribe?plan=starter"
-                className="mt-8 w-full h-11 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs flex items-center justify-center transition-all cursor-pointer"
-              >
-                Choose Starter
-              </Link>
-            </div>
-
-            {/* Business Plan (Highlighted Card) */}
-            <div className="relative bg-white border-2 border-blue-600 rounded-3xl p-6 flex flex-col justify-between shadow-2xl shadow-blue-500/10">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full shadow-md">
-                MOST POPULAR
-              </div>
-
-              <div>
-                <span className="text-xs font-bold text-blue-600 uppercase tracking-wider block">Business</span>
-                <div className="mt-3 flex items-baseline gap-1">
-                  <span className="text-3xl font-black font-display text-slate-900">
-                    ₹{billingCycle === "monthly" ? "119" : "1,199"}
-                  </span>
-                  <span className="text-xs text-slate-500">/{billingCycle === "monthly" ? "mo" : "yr"}</span>
-                </div>
-                <p className="text-xs text-slate-600 mt-2">The complete suite with thermal printing & khata.</p>
-
-                <ul className="mt-6 space-y-2.5 text-xs text-slate-700">
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span className="font-semibold text-slate-900">All Starter features</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>58mm / 80mm Thermal Receipts</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>WhatsApp Udhaar Khata Reminders</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Daily Profit & Expense Analytics</span>
-                  </li>
-                </ul>
-              </div>
-
-              <Link
-                to="/subscribe?plan=business"
-                className="mt-8 w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25 active:scale-95 transition-all cursor-pointer"
-              >
-                <span>Upgrade to Business</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-
-            {/* Pro / Annual VIP Plan */}
-            <div className="bg-white border border-slate-200/80 rounded-3xl p-6 flex flex-col justify-between shadow-xs">
-              <div>
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Annual VIP</span>
-                <div className="mt-3 flex items-baseline gap-1">
-                  <span className="text-3xl font-black font-display text-slate-900">
-                    ₹1,499
-                  </span>
-                  <span className="text-xs text-slate-500">/year</span>
-                </div>
-                <p className="text-xs text-slate-500 mt-2">Full year access with priority phone support.</p>
-
-                <ul className="mt-6 space-y-2.5 text-xs text-slate-600">
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>Complete 12-Month Access</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>Custom Shop Name & Logo on Bill</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>Priority WhatsApp Onboarding</span>
-                  </li>
-                </ul>
-              </div>
-
-              <Link
-                to="/subscribe?plan=premium"
-                className="mt-8 w-full h-11 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs flex items-center justify-center transition-all cursor-pointer"
-              >
-                Choose Annual VIP
-              </Link>
-            </div>
+          <div className="mt-10 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 lg:grid-cols-4 sm:mt-14">
+            {ecosystem.map((item, index) => (
+              <Reveal key={item.label} delay={index * 0.05} distance={38}>
+                <Link
+                  to={item.href}
+                  className="group block rounded-2xl border border-[#cecdc5] bg-[#f3f3ed] p-5 transition duration-300 hover:-translate-y-1 hover:bg-white"
+                >
+                  <div className="flex h-24 items-center justify-center rounded-xl bg-[#e4e4dc] sm:h-28">
+                    <img src={item.src} alt={item.alt} loading="lazy" className="max-h-20 max-w-[82%] object-contain transition-transform duration-300 group-hover:scale-105" />
+                  </div>
+                  <div className="mt-4 flex items-center justify-between sm:mt-5">
+                    <span className="text-sm font-black">{item.label}</span>
+                    <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+                  </div>
+                </Link>
+              </Reveal>
+            ))}
           </div>
         </section>
 
-        {/* 6. Direct WhatsApp Floating Action */}
-        <div className="mt-24 p-8 rounded-3xl bg-gradient-to-r from-emerald-50 via-white to-blue-50 border border-emerald-200/80 text-center max-w-3xl mx-auto shadow-sm">
-          <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-700 mx-auto flex items-center justify-center mb-3">
-            <MessageCircle className="w-6 h-6" />
+        <section className="border-y border-[#171716] bg-[#dfe0d7]">
+          <div className="mx-auto max-w-[1180px] px-4 py-24 sm:px-6 sm:py-32">
+            <Reveal>
+              <div className="grid gap-10 md:grid-cols-2">
+                <div>
+                  <Label>WHY KIVO</Label>
+                  <h2 className="mt-4 max-w-[650px] font-serif text-4xl font-bold tracking-[-0.045em] sm:text-6xl">
+                    Built to make the everyday work feel clearer.
+                  </h2>
+                </div>
+                <div className="grid gap-8 sm:grid-cols-3 md:pt-10">
+                  {[
+                    [Store, "Business first", "The product is organised around day-to-day shop work."],
+                    [RefreshCw, "Connected records", "Core workflows use server-backed business data."],
+                    [Sparkles, "Growing ecosystem", "Kivo products can extend the wider workflow."],
+                  ].map(([Icon, title, text], i) => (
+                    <Reveal key={title} delay={i * 0.08} distance={35}>
+                      <Icon size={21} />
+                      <h3 className="mt-5 text-base font-black">{title}</h3>
+                      <p className="mt-2 text-xs leading-6 text-[#66655e]">{text}</p>
+                    </Reveal>
+                  ))}
+                </div>
+              </div>
+            </Reveal>
           </div>
-          <h3 className="text-xl font-bold font-display text-slate-900">Need help setting up your store?</h3>
-          <p className="text-xs text-slate-600 mt-1.5 max-w-md mx-auto">
-            Speak directly with our team on WhatsApp for hardware support, barcode scanners, or thermal printer setup.
-          </p>
-          <a
-            href="https://wa.me/919876543210?text=Hi%2C%20I%20want%20to%20set%20up%20Kivo%20POS%20for%20my%20shop"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-5 inline-flex items-center gap-2 h-11 px-6 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-lg shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer"
-          >
-            <MessageCircle className="w-4 h-4" />
-            <span>Chat on WhatsApp (Instant Reply)</span>
-          </a>
-        </div>
+        </section>
+
+        <section id="pricing" className="mx-auto max-w-[1180px] px-4 py-24 sm:px-6 sm:py-32">
+          <Reveal>
+            <Label>PLANS</Label>
+            <h2 className="mt-4 max-w-[700px] font-serif text-4xl font-bold tracking-[-0.045em] sm:text-6xl">
+              Start with what you need.
+            </h2>
+            <p className="mt-5 max-w-[580px] text-sm leading-7 text-[#68675f]">
+              Simple options for different business workflows.
+            </p>
+          </Reveal>
+
+          <div className="mt-10 grid gap-4 sm:mt-14 lg:grid-cols-3">
+            {plans.map((plan, index) => (
+              <Reveal key={plan.name} delay={index * 0.08} distance={48}>
+                <div className={`h-full rounded-2xl border p-7 ${plan.featured ? "border-[#171716] bg-[#171716] text-white" : "border-[#cecdc5] bg-[#f3f3ed]"}`}>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-black">{plan.name}</h3>
+                    {plan.featured && (
+                      <span className="rounded-full bg-white/10 px-3 py-1 text-[8px] font-black uppercase tracking-[0.15em]">Popular</span>
+                    )}
+                  </div>
+                  <p className={`mt-3 text-xs leading-6 ${plan.featured ? "text-[#aaa99f]" : "text-[#68675f]"}`}>{plan.text}</p>
+                  <div className="mt-8">
+                    <span className="font-serif text-4xl font-bold tracking-[-0.05em] sm:text-5xl">₹{plan.price}</span>
+                    <span className={`ml-1 text-xs ${plan.featured ? "text-[#aaa99f]" : "text-[#77766e]"}`}>{plan.suffix}</span>
+                  </div>
+                  <ul className="mt-8 space-y-4">
+                    {plan.features.map((item) => (
+                      <li key={item} className="flex gap-2 text-xs leading-5">
+                        <Check size={14} className="mt-0.5 shrink-0" /> {item}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link
+                    to={plan.href}
+                    className={`mt-9 inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-[11px] font-black ${plan.featured ? "bg-white text-[#171716]" : "bg-[#171716] text-white"}`}
+                  >
+                    Choose {plan.name} ↗
+                  </Link>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </section>
+
+        <section className="bg-[#171716] text-white">
+          <div className="mx-auto max-w-[1180px] px-5 py-24 text-center sm:px-6 sm:py-36">
+            <Reveal distance={55}>
+              <Label light>READY WHEN YOU ARE</Label>
+              <h2 className="mx-auto mt-5 max-w-[820px] font-serif text-[2.9rem] font-bold sm:text-5xl leading-[0.95] tracking-[-0.055em] sm:text-7xl">
+                Make business feel simpler.
+              </h2>
+              <p className="mx-auto mt-6 max-w-[520px] text-sm leading-7 text-[#aaa99f]">
+                Bring your daily workflow into Kivo and keep the important work connected.
+              </p>
+              <Link
+                to={user ? "/app" : "/register"}
+                className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-3 sm:mt-9 sm:w-auto text-[11px] font-black text-[#171716]"
+              >
+                {user ? "Open Kivo" : "Get started"} <ArrowRight size={15} />
+              </Link>
+            </Reveal>
+          </div>
+        </section>
       </main>
 
-      {/* 7. Clean Minimalist Footer */}
-      <footer className="border-t border-slate-200 py-10 text-center text-xs text-slate-500 relative z-10 bg-white/50">
-        <div className="flex justify-center mb-5">
-          <div className="flex items-center px-3 py-1 rounded-xl bg-white shadow-xs border border-slate-200/60">
-            <img src="/kivo-logo.png" alt="Kivo" className="h-7 w-auto object-contain" />
+      <footer className="border-t border-[#393936] bg-[#171716] px-4 py-8 text-[#85847b] sm:px-6">
+        <div className="mx-auto flex max-w-[1180px] flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <img src="/kivo-logo.png" alt="Kivo" className="h-7 w-auto brightness-0 invert" />
+            <span className="text-[10px]">By PEAN</span>
+          </div>
+          <div className="flex flex-wrap gap-5 text-[10px] font-bold">
+            <Link to="/privacy-policy" className="hover:text-white">Privacy</Link>
+            <Link to="/refund-policy" className="hover:text-white">Refund</Link>
+            <Link to="/careers" className="hover:text-white">Careers</Link>
+            <Link to="/info" className="hover:text-white">About</Link>
           </div>
         </div>
-        <div className="flex flex-wrap items-center justify-center gap-6 mb-3 text-slate-500 font-medium">
-          <Link to="/privacy-policy" className="hover:text-blue-600 transition-colors">Privacy Policy</Link>
-          <Link to="/refund-policy" className="hover:text-blue-600 transition-colors">Refund Policy</Link>
-          <a href="mailto:contact@officialdukaan.in" className="hover:text-blue-600 transition-colors">Support</a>
-        </div>
-        <p className="font-mono text-[11px] text-slate-400">© 2026 Kivo · Business Made Simple · All rights reserved.</p>
       </footer>
     </div>
   );

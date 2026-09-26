@@ -45,7 +45,9 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ.get('DB_NAME', 'dukaan')]
 
 JWT_ALGORITHM = "HS256"
-JWT_SECRET = os.environ.get("JWT_SECRET", "dukaan_secret_jwt_key_2026")
+JWT_SECRET = os.environ.get("JWT_SECRET", "").strip()
+if not JWT_SECRET:
+    raise RuntimeError("JWT_SECRET must be configured in the environment; refusing to start with a default secret.")
 
 # Email Configuration (Supports Resend API, SMTP, or Emergent Relay)
 EMAIL_BASE_URL = os.environ.get("EMAIL_BASE_URL", "https://integrations.emergentagent.com")
@@ -62,9 +64,11 @@ RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "").strip()
 RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "").strip()
 RAZORPAY_WEBHOOK_SECRET = os.environ.get("RAZORPAY_WEBHOOK_SECRET", "").strip()
 SUBSCRIPTION_CRON_SECRET = os.environ.get("SUBSCRIPTION_CRON_SECRET", "").strip()
-origins = os.environ.get("CORS_ORIGINS", "*").split(",")
+origins = [origin.strip().rstrip("/") for origin in os.environ.get("CORS_ORIGINS", "").split(",") if origin.strip()]
+if not origins or "*" in origins:
+    raise RuntimeError("CORS_ORIGINS must explicitly list trusted frontend origins when credentials are enabled.")
 
-app = FastAPI(title="Dukaan API")
+app = FastAPI(title="Kivo API")
 api = APIRouter(prefix="/api")
 app.add_middleware(
     CORSMiddleware,
@@ -75,7 +79,57 @@ app.add_middleware(
 )
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("dukaan")
+logger = logging.getLogger("kivo")
+
+
+@app.middleware("http")
+async def request_observability(request: Request, call_next):
+    request_id = request.headers.get("X-Request-ID", "").strip()[:100] or secrets.token_hex(8)
+    request.state.request_id = request_id
+    started = datetime.now(timezone.utc)
+    try:
+        response = await call_next(request)
+        response.headers["X-Request-ID"] = request_id
+        elapsed_ms = (datetime.now(timezone.utc) - started).total_seconds() * 1000
+        logger.info(
+            "request_complete request_id=%s method=%s path=%s status=%s duration_ms=%.1f",
+            request_id, request.method, request.url.path, response.status_code, elapsed_ms,
+        )
+        return response
+    except Exception:
+        elapsed_ms = (datetime.now(timezone.utc) - started).total_seconds() * 1000
+        logger.exception(
+            "request_failed request_id=%s method=%s path=%s duration_ms=%.1f",
+            request_id, request.method, request.url.path, elapsed_ms,
+        )
+        raise
+
+
+# =========================================================
+# Lightweight per-process abuse protection
+# =========================================================
+async def _rate_limit(key: str, limit: int, window_seconds: int = 60):
+    # Fixed-window Mongo counter: shared across all API instances/processes.
+    now = datetime.now(timezone.utc)
+    bucket_number = int(now.timestamp() // window_seconds)
+    bucket_id = hashlib.sha256(f"{key}:{bucket_number}".encode()).hexdigest()
+    expires_at = now + timedelta(seconds=window_seconds * 2)
+    result = await db.rate_limits.find_one_and_update(
+        {"_id": bucket_id},
+        {"$inc": {"count": 1}, "$setOnInsert": {"expires_at": expires_at}},
+        upsert=True,
+        return_document=True,
+    )
+    count = int(result.get("count", 0))
+    if count > limit:
+        retry_after = max(1, int((bucket_number + 1) * window_seconds - now.timestamp()))
+        raise HTTPException(429, "Too many requests. Please try again later.", headers={"Retry-After": str(retry_after)})
+
+
+def _client_key(request: Request, scope: str):
+    forwarded = request.headers.get("x-forwarded-for", "")
+    ip = forwarded.split(",")[0].strip() if forwarded else (request.client.host if request.client else "unknown")
+    return f"{scope}:{ip}"
 
 
 # =========================================================
@@ -124,12 +178,12 @@ def _set_cookie(resp: Response, token: str):
     )
 
 
-ADMIN_EMAIL = "contact@officialdukaan.in"
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "contact@officialdukaan.in").strip().lower()
 
 async def get_admin_user(request: Request) -> dict:
     user = await _get_current_user(request)
-    if (user.get("email") or "").lower() != ADMIN_EMAIL:
-        raise HTTPException(status_code=403, detail="Admin only. Only contact@officialdukaan.in is authorized.")
+    if not user.get("is_admin") or (user.get("email") or "").lower() != ADMIN_EMAIL:
+        raise HTTPException(status_code=403, detail="Admin access required.")
     return user
 
 
@@ -327,6 +381,11 @@ class ProductIn(BaseModel):
     min_stock: int = 5
     unlimited_stock: bool = False
     image_data_url: Optional[str] = ""
+    barcode: Optional[str] = ""
+    hsn: Optional[str] = ""
+    gst_rate: Optional[float] = Field(default=0, ge=0, le=100)
+    batch_number: Optional[str] = ""
+    expiry_date: Optional[str] = ""
 
 class CustomerIn(BaseModel):
     name: str
@@ -569,7 +628,8 @@ async def send_email(to: str, subject: str, html: str):
 # Auth
 # =========================================================
 @api.post("/auth/register")
-async def register(body: RegisterIn, response: Response):
+async def register(body: RegisterIn, response: Response, request: Request):
+    await _rate_limit(_client_key(request, "register"), 5, 300)
     email = body.email.lower().strip()
     existing = await db.users.find_one({"email": email})
     if existing:
@@ -639,8 +699,6 @@ async def register(body: RegisterIn, response: Response):
         "ok": True,
         "need_verification": True,
         "email": email,
-        "verification_code": verification_code,
-        "verification_token": verification_token,
         "message": "Account created! A verification code has been sent to your email.",
         "user": {
             "id": uid,
@@ -654,70 +712,103 @@ async def register(body: RegisterIn, response: Response):
 
 @api.post("/auth/social-login")
 async def social_login(body: dict, response: Response):
-    email = body.get("email", "").lower().strip()
-    name = body.get("name", "").strip() or "Social User"
-    provider = body.get("provider", "google")
-    if not email:
-        raise HTTPException(400, "Email is required for social sign-in.")
+    provider = str(body.get("provider", "google")).lower().strip()
+    if provider != "google":
+        raise HTTPException(status_code=501, detail="This social provider is not configured for verified sign-in.")
 
+    id_token = str(body.get("id_token") or body.get("credential") or "").strip()
+    google_client_id = os.environ.get("GOOGLE_CLIENT_ID", "").strip()
+    if not id_token or not google_client_id:
+        raise HTTPException(status_code=503, detail="Google sign-in is not configured.")
+
+    try:
+        async with httpx.AsyncClient(timeout=5) as http:
+            r = await http.get(
+                "https://oauth2.googleapis.com/tokeninfo",
+                params={"id_token": id_token},
+            )
+        if r.status_code != 200:
+            raise HTTPException(status_code=401, detail="Invalid Google identity token.")
+        claims = r.json()
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=502, detail="Unable to verify Google identity.")
+
+    if (
+        claims.get("aud") != google_client_id
+        or claims.get("iss") != "https://accounts.google.com"
+        or str(claims.get("email_verified", "")).lower() != "true"
+    ):
+        raise HTTPException(status_code=401, detail="Google identity verification failed.")
+
+    email = str(claims.get("email", "")).strip().lower()
+    if not email:
+        raise HTTPException(status_code=400, detail="Google account email is unavailable.")
+
+    name = str(claims.get("name") or body.get("name") or email.split("@")[0]).strip()
+    avatar = str(claims.get("picture") or "").strip()
     user = await db.users.find_one({"email": email})
     now = now_iso()
+
     if not user:
-        user_doc = {
+        doc = {
             "name": name,
             "email": email,
             "password_hash": "",
-            "is_admin": False,
+            "is_admin": email == ADMIN_EMAIL,
             "is_verified": True,
-            "provider": provider,
-            "created_at": now
+            "email_verified": True,
+            "phone_verified": False,
+            "provider": "google",
+            "avatar": avatar,
+            "created_at": now,
         }
-        res = await db.users.insert_one(user_doc)
-        user_id = str(res.inserted_id)
-
-        shop_doc = {
-            'user_id': user_id,
-            'name': name + " Shop",
-            'tagline': 'Smart Retail POS',
-            'phone': '',
-            'address': '',
-            'currency': 'INR',
-            'currency_symbol': '₹',
-            'invoice_header': name + " Shop",
-            'invoice_footer': 'Thank you for shopping with us!',
-            'min_stock_default': 5,
-            'contact_email': email,
-            'store_category': '',
-            'gst_number': '',
-            'gst_status': 'not_submitted',
-            'gst_enabled': False,
-            'gst_rate': 0,
-            'financial_year': '2026-27',
-            'store_active': True,
-            'created_at': now
-        }
-        await db.shops.insert_one(shop_doc)
+        res = await db.users.insert_one(doc)
+        user = await db.users.find_one({"_id": res.inserted_id})
+        await db.shops.insert_one({
+            "name": name + "'s Shop",
+            "owner_id": str(res.inserted_id),
+            "owner_name": name,
+            "phone": "",
+            "address": "",
+            "contact_email": email,
+            "store_category": "",
+            "gst_status": "not_submitted",
+            "gst_enabled": False,
+            "gst_rate": 0,
+            "financial_year": "2026-27",
+            "store_active": True,
+            "created_at": now,
+        })
     else:
-        user_id = str(user["_id"])
-        await db.users.update_one({"_id": user["_id"]}, {"$set": {"is_verified": True, "provider": provider}})
+        await db.users.update_one(
+            {"_id": user["_id"]},
+            {"$set": {"is_verified": True, "email_verified": True, "provider": "google", "avatar": avatar or user.get("avatar", "")}},
+        )
+        user = await db.users.find_one({"_id": user["_id"]})
 
-    token = create_access_token(user_id, email)
-    response.set_cookie("access_token", token, httponly=True, samesite="lax", max_age=7 * 86400)
+    uid = str(user["_id"])
+    token = create_access_token(uid, email)
+    _set_cookie(response, token)
     return {
         "ok": True,
         "access_token": token,
+        "token_type": "bearer",
         "user": {
-            "id": user_id,
-            "name": user.get("name", name) if user else name,
+            "id": uid,
+            "name": user.get("name", name),
             "email": email,
+            "avatar": user.get("avatar", avatar),
             "is_verified": True,
-            "provider": provider
-        }
+            "email_verified": True,
+            "is_admin": bool(user.get("is_admin")) and email == ADMIN_EMAIL,
+        },
     }
 
-
 @api.post("/auth/verify-email")
-async def verify_email(body: dict, response: Response):
+async def verify_email(body: dict, response: Response, request: Request):
+    await _rate_limit(_client_key(request, "verify-email"), 10, 300)
     email = body.get("email", "").lower().strip()
     code = str(body.get("code", "")).strip()
     token = str(body.get("token", "")).strip()
@@ -779,7 +870,8 @@ async def verify_email(body: dict, response: Response):
     }
 
 @api.post("/auth/resend-verification")
-async def resend_verification(body: dict):
+async def resend_verification(body: dict, request: Request):
+    await _rate_limit(_client_key(request, "resend-verification"), 3, 300)
     email = body.get("email", "").lower().strip()
     user = await db.users.find_one({"email": email})
     if not user:
@@ -818,34 +910,19 @@ async def resend_verification(body: dict):
         logger.warning(f"Failed to resend verification email: {e}")
 
     return {
-        "ok": True, 
-        "verification_code": verification_code,
-        "verification_token": verification_token,
+        "ok": True,
         "message": "Verification code resent successfully."
     }
 
 @api.post("/auth/login")
-async def login(body: LoginIn, response: Response):
+async def login(body: LoginIn, response: Response, request: Request):
+    await _rate_limit(_client_key(request, "login"), 10, 60)
     email = body.email.lower().strip()
     user = await db.users.find_one({"email": email})
     if not user:
-        if email == ADMIN_EMAIL and body.password == "Viral@1979":
-            now = datetime.now(timezone.utc).isoformat()
-            doc = {
-                "name": "Dukaan Admin",
-                "email": ADMIN_EMAIL,
-                "password_hash": hash_password(body.password),
-                "created_at": now,
-                "is_admin": True,
-                "is_verified": True
-            }
-            res = await db.users.insert_one(doc)
-            user = await db.users.find_one({"_id": res.inserted_id})
-        else:
-            raise HTTPException(404, "No account found with this email. Please create an account.")
+        raise HTTPException(404, "No account found with this email. Please create an account.")
 
-    is_admin_match = (email == ADMIN_EMAIL and body.password == "Viral@1979")
-    if not is_admin_match and not verify_password(body.password, user.get("password_hash", "")):
+    if not verify_password(body.password, user.get("password_hash", "")):
         raise HTTPException(401, "Incorrect password. Please try again.")
 
     is_verified = bool(user.get("is_verified", True))
@@ -881,7 +958,8 @@ async def logout(response: Response):
     return {"ok": True}
 
 @api.post("/auth/forgot-password")
-async def forgot_password(body: dict):
+async def forgot_password(body: dict, request: Request):
+    await _rate_limit(_client_key(request, "forgot-password"), 5, 300)
     email = body.get("email", "").lower().strip()
     if not email:
         raise HTTPException(400, "Email address is required.")
@@ -921,14 +999,13 @@ async def forgot_password(body: dict):
 
     return {
         "ok": True,
-        "token": token,
-        "code": reset_code,
         "email": email,
         "message": "Password reset instructions sent to your email."
     }
 
 @api.post("/auth/reset-password")
-async def reset_password(body: dict):
+async def reset_password(body: dict, request: Request):
+    await _rate_limit(_client_key(request, "reset-password"), 10, 300)
     token = body.get("token")
     code = body.get("code")
     email = body.get("email", "").lower().strip()
@@ -1026,7 +1103,8 @@ async def start_free_trial(body: TrialStartIn, user: dict = Depends(get_current_
     return {"ok": True, "status": "active", "trial": True, "trial_days": plan["trial_days"], "starts_at": doc["starts_at"], "expires_at": doc["expires_at"], "subscription": doc}
 
 @api.post("/subscriptions/submit")
-async def submit_subscription(body: SubscriptionSubmitIn, user: dict = Depends(get_current_user)):
+async def submit_subscription(body: SubscriptionSubmitIn, request: Request, user: dict = Depends(get_current_user)):
+    await _rate_limit(_client_key(request, "subscription-submit"), 5, 300)
     plan = PLANS[body.plan]
     now = now_iso()
     doc = {
@@ -1243,7 +1321,8 @@ def _iso_dt(v):
 
 
 @api.post("/subscriptions/razorpay/order")
-async def razorpay_order(body: RazorpayOrderIn, user: dict = Depends(get_current_user)):
+async def razorpay_order(body: RazorpayOrderIn, request: Request, user: dict = Depends(get_current_user)):
+    await _rate_limit(_client_key(request, "razorpay-order"), 10, 60)
     active = await _active_sub(user['id'])
     now = datetime.now(timezone.utc)
     if body.renew and active:
@@ -1266,6 +1345,15 @@ async def _activate_verified_rzp_subscription(sub: dict, payment_id: str) -> dic
         raise HTTPException(404, "Payment order not found")
     if current.get("status") in ("active", "scheduled") and current.get("razorpay_payment_id") == payment_id:
         return clean(current)
+
+    # A Razorpay payment may finalize exactly one subscription record.
+    # Refuse replay/cross-order reuse of a payment id before changing state.
+    reused = await db.subscriptions.find_one({
+        "razorpay_payment_id": payment_id,
+        "_id": {"$ne": current["_id"]},
+    })
+    if reused:
+        raise HTTPException(409, "Payment has already been processed")
 
     now = datetime.now(timezone.utc)
     starts = _iso_dt(current.get("starts_at")) or now
@@ -1309,14 +1397,17 @@ async def _finalize_razorpay_payment(order_id: str, payment_id: str, signature: 
     payment = await _rzp_call('GET',f"https://api.razorpay.com/v1/payments/{payment_id}")
     if payment.get('order_id') != order_id or int(payment.get('amount',0)) != int(float(sub['amount'])*100) or payment.get('currency') != 'INR':
         raise HTTPException(400,'Payment mismatch')
-    if payment.get('status') not in ('captured','authorized'):
+    # Subscription access is granted only after Razorpay confirms capture.
+    # An authorized-but-not-captured payment must not activate paid access.
+    if payment.get('status') != 'captured':
         raise HTTPException(400,f"Payment status is {payment.get('status','unknown')}")
 
     return await _activate_verified_rzp_subscription(sub, payment_id)
 
 
 @api.post("/subscriptions/razorpay/verify")
-async def razorpay_verify(body: RazorpayVerifyIn, user: dict = Depends(get_current_user)):
+async def razorpay_verify(body: RazorpayVerifyIn, request: Request, user: dict = Depends(get_current_user)):
+    await _rate_limit(_client_key(request, "razorpay-verify"), 10, 60)
     sub = await db.subscriptions.find_one({"user_id":user['id'],"razorpay_order_id":body.razorpay_order_id,"status":"pending","payment_method":"razorpay"})
     if not sub:
         existing = await db.subscriptions.find_one({"user_id":user['id'],"razorpay_order_id":body.razorpay_order_id,"razorpay_payment_id":body.razorpay_payment_id})
@@ -1572,26 +1663,119 @@ async def list_products(shop: dict = Depends(get_shop), q: Optional[str] = None,
 
 @api.post("/products")
 async def create_product(body: ProductIn, shop: dict = Depends(get_shop)):
-    doc = body.model_dump(); doc["shop_id"] = shop["id"]; doc["created_at"] = now_iso()
-    r = await db.products.insert_one(doc); doc["id"] = str(r.inserted_id); doc.pop("_id", None)
+    doc = body.model_dump()
+    doc["shop_id"] = shop["id"]
+    doc["created_at"] = now_iso()
+    r = await db.products.insert_one(doc)
+    doc["id"] = str(r.inserted_id)
+    doc.pop("_id", None)
     return doc
 
 @api.put("/products/{pid}")
 async def update_product(pid: str, body: ProductIn, shop: dict = Depends(get_shop)):
-    if not ObjectId.is_valid(pid): raise HTTPException(400, "bad id")
-    res = await db.products.update_one({"_id": ObjectId(pid), "shop_id": shop["id"]}, {"$set": body.model_dump()})
-    if res.matched_count == 0: raise HTTPException(404, "not found")
+    if not ObjectId.is_valid(pid):
+        raise HTTPException(400, "bad id")
+    res = await db.products.update_one(
+        {"_id": ObjectId(pid), "shop_id": shop["id"]},
+        {"$set": body.model_dump()},
+    )
+    if res.matched_count == 0:
+        raise HTTPException(404, "not found")
     return clean(await db.products.find_one({"_id": ObjectId(pid)}))
+
+@api.delete("/products/{pid}")
+async def delete_product(pid: str, shop: dict = Depends(get_shop)):
+    if not ObjectId.is_valid(pid):
+        raise HTTPException(400, "bad id")
+    product = await db.products.find_one({"_id": ObjectId(pid), "shop_id": shop["id"]})
+    if not product:
+        raise HTTPException(404, "not found")
+    await db.products.delete_one({"_id": product["_id"], "shop_id": shop["id"]})
+    return {"ok": True, "id": pid}
+
+@api.get("/products/velocity")
+async def product_velocity(days: int = 30, shop: dict = Depends(get_shop)):
+    days = max(1, min(int(days), 365))
+    since = datetime.now(timezone.utc) - timedelta(days=days)
+    since_iso = since.isoformat()
+
+    pipeline = [
+        {"$match": {"shop_id": shop["id"], "created_at": {"$gte": since_iso}}},
+        {"$unwind": "$items"},
+        {"$group": {"_id": "$items.product_id", "sold_count": {"$sum": "$items.qty"}}},
+    ]
+    sold_by_product = {}
+    async for row in db.orders.aggregate(pipeline):
+        sold_by_product[str(row["_id"])] = int(row.get("sold_count", 0) or 0)
+
+    products = []
+    async for product in db.products.find({"shop_id": shop["id"]}):
+        pid = str(product["_id"])
+        sold_count = sold_by_product.get(pid, 0)
+        daily_burn = sold_count / days
+        stock = int(product.get("stock", 0) or 0)
+        unlimited = bool(product.get("unlimited_stock"))
+        days_left = None if unlimited or daily_burn <= 0 else round(stock / daily_burn, 1)
+        products.append({
+            "product_id": pid,
+            "sold_count": sold_count,
+            "daily_burn": round(daily_burn, 3),
+            "days_left": days_left,
+        })
+    return {"days": days, "since": since_iso, "products": products}
+
 
 @api.post("/products/{pid}/stock")
 async def adjust_stock(pid: str, body: StockAdjustIn, shop: dict = Depends(get_shop)):
-    if not ObjectId.is_valid(pid): raise HTTPException(400, "bad id")
+    if not ObjectId.is_valid(pid):
+        raise HTTPException(400, "bad id")
+    if body.qty == 0:
+        raise HTTPException(400, "Stock adjustment cannot be zero")
     prod = await db.products.find_one({"_id": ObjectId(pid), "shop_id": shop["id"]})
-    if not prod: raise HTTPException(404, "not found")
-    if prod.get("unlimited_stock"): return clean(prod)
-    await db.products.update_one({"_id": prod["_id"]}, {"$inc": {"stock": body.qty}})
-    await db.stock_movements.insert_one({"shop_id": shop["id"],"product_id":pid,"qty":body.qty,"reason":body.reason,"created_at":now_iso()})
+    if not prod:
+        raise HTTPException(404, "not found")
+    if prod.get("unlimited_stock"):
+        return clean(prod)
+    if body.qty < 0:
+        result = await db.products.update_one(
+            {"_id": prod["_id"], "shop_id": shop["id"], "stock": {"$gte": abs(body.qty)}},
+            {"$inc": {"stock": body.qty}},
+        )
+    else:
+        result = await db.products.update_one(
+            {"_id": prod["_id"], "shop_id": shop["id"]},
+            {"$inc": {"stock": body.qty}},
+        )
+    if result.matched_count == 0:
+        raise HTTPException(409, "Stock cannot go below zero")
+    await db.stock_movements.insert_one({
+        "shop_id": shop["id"], "product_id": pid, "qty": body.qty,
+        "reason": body.reason, "created_at": now_iso(),
+    })
     return clean(await db.products.find_one({"_id": prod["_id"]}))
+
+@api.post("/products/sync-all")
+async def sync_products_all_branches(shop: dict = Depends(get_shop)):
+    source = await db.products.find({"shop_id": shop["id"]}).to_list(1000)
+    branches = await db.shops.find({
+        "owner_id": shop.get("owner_id"), "_id": {"$ne": ObjectId(shop["id"])}
+    }).to_list(100)
+    synced = 0
+    for branch in branches:
+        target_id = str(branch["_id"])
+        for product in source:
+            match = {"barcode": product["barcode"]} if product.get("barcode") else {"name": product.get("name")}
+            existing = await db.products.find_one({"shop_id": target_id, **match})
+            payload = {k: v for k, v in product.items() if k not in {"_id", "shop_id", "created_at", "stock"}}
+            payload["shop_id"] = target_id
+            if existing:
+                await db.products.update_one({"_id": existing["_id"]}, {"$set": payload})
+            else:
+                payload["stock"] = 0 if product.get("unlimited_stock") else int(product.get("stock", 0))
+                payload["created_at"] = now_iso()
+                await db.products.insert_one(payload)
+            synced += 1
+    return {"ok": True, "synced": synced}
 
 # =========================================================
 # CUSTOMERS
@@ -1652,21 +1836,157 @@ async def get_customer(cid: str, shop: dict = Depends(get_shop_paid)):
 # =========================================================
 @api.post("/orders")
 async def create_order(body: OrderIn, shop: dict = Depends(get_shop)):
-    if not body.items: raise HTTPException(400,"No items")
-    subtotal=sum(float(i.price)*int(i.qty) for i in body.items)
-    total=max(0, subtotal-float(body.discount or 0))
-    paid=total if body.payment_method in ("cash","upi") else float(body.amount_received or 0)
-    pending=max(0,total-paid) if body.payment_method=="udhaar" else 0
-    order_no=f"OD-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{secrets.token_hex(2).upper()}"
-    doc={"shop_id":shop["id"],"order_no":order_no,"items":[i.model_dump() for i in body.items],"subtotal":subtotal,"discount":float(body.discount or 0),"total":total,"customer_id":body.customer_id,"payment_method":body.payment_method,"paid_amount":paid,"pending_amount":pending,"amount_received":body.amount_received,"note":body.note or "","created_at":now_iso(),"status":"udhaar" if pending>0 else "paid"}
-    r=await db.orders.insert_one(doc); order_id=str(r.inserted_id)
+    if not body.items:
+        raise HTTPException(400, "No items")
+
+    # Never trust client-supplied prices or stock. Resolve every product from the
+    # current shop before creating the order.
+    normalized_items = []
+    product_rows = {}
+    requested_qty = {}
     for item in body.items:
-        if ObjectId.is_valid(item.product_id):
-            prod=await db.products.find_one({"_id":ObjectId(item.product_id),"shop_id":shop["id"]})
-            if prod and prod.get("unlimited_stock"): continue
-            await db.products.update_one({"_id":ObjectId(item.product_id),"shop_id":shop["id"]},{"$inc":{"stock":-item.qty}})
-            await db.stock_movements.insert_one({"shop_id":shop["id"],"product_id":item.product_id,"qty":-item.qty,"reason":f"sale#{order_no}","created_at":now_iso()})
-    doc["id"]=order_id; doc.pop("_id",None); return doc
+        if not item.product_id or not ObjectId.is_valid(item.product_id):
+            raise HTTPException(400, f"Invalid product: {item.name}")
+        qty = int(item.qty)
+        if qty <= 0:
+            raise HTTPException(400, f"Invalid quantity for {item.name}")
+        pid = str(item.product_id)
+        requested_qty[pid] = requested_qty.get(pid, 0) + qty
+
+    valid_ids = [ObjectId(pid) for pid in requested_qty]
+    async for prod in db.products.find({"_id": {"$in": valid_ids}, "shop_id": shop["id"]}):
+        product_rows[str(prod["_id"])] = prod
+
+    if len(product_rows) != len(requested_qty):
+        raise HTTPException(400, "One or more products are missing or do not belong to this shop")
+
+    for pid, qty in requested_qty.items():
+        prod = product_rows[pid]
+        if not prod.get("unlimited_stock") and int(prod.get("stock", 0)) < qty:
+            raise HTTPException(409, f"Insufficient stock for {prod.get('name', 'product')}")
+
+    for item in body.items:
+        prod = product_rows[item.product_id]
+        normalized_items.append({
+            "product_id": item.product_id,
+            "name": prod.get("name", item.name),
+            "price": float(prod.get("selling_price", 0)),
+            "qty": int(item.qty),
+        })
+
+    subtotal = sum(float(i["price"]) * int(i["qty"]) for i in normalized_items)
+    discount = max(0.0, float(body.discount or 0))
+    if discount > subtotal:
+        discount = subtotal
+    total = max(0.0, subtotal - discount)
+
+    if body.payment_method == "cash":
+        received = float(body.amount_received if body.amount_received is not None else total)
+        if received < total:
+            raise HTTPException(400, "Amount received is less than the bill total")
+        paid = total
+        pending = 0.0
+    elif body.payment_method == "upi":
+        received = total
+        paid = total
+        pending = 0.0
+    else:
+        if not body.customer_id or not ObjectId.is_valid(body.customer_id):
+            raise HTTPException(400, "A valid customer is required for Udhaar")
+        customer = await db.customers.find_one({"_id": ObjectId(body.customer_id), "shop_id": shop["id"]})
+        if not customer:
+            raise HTTPException(400, "Customer does not belong to this shop")
+        received = max(0.0, min(float(body.amount_received or 0), total))
+        paid = received
+        pending = max(0.0, total - paid)
+
+    order_no = f"OD-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{secrets.token_hex(2).upper()}"
+    doc = {
+        "shop_id": shop["id"],
+        "order_no": order_no,
+        "items": normalized_items,
+        "subtotal": subtotal,
+        "discount": discount,
+        "total": total,
+        "customer_id": body.customer_id,
+        "payment_method": body.payment_method,
+        "paid_amount": paid,
+        "pending_amount": pending,
+        "amount_received": received,
+        "note": body.note or "",
+        "created_at": now_iso(),
+        "status": "udhaar" if pending > 0 else "paid",
+    }
+
+    # Checkout is a multi-document operation (order + stock + movement records).
+    # Require a MongoDB transaction so a partial checkout can never become durable.
+    try:
+        async with await client.start_session() as session:
+            async with session.start_transaction():
+                r = await db.orders.insert_one(doc, session=session)
+                order_id = str(r.inserted_id)
+
+                for pid, qty in requested_qty.items():
+                    prod = product_rows[pid]
+                    if prod.get("unlimited_stock"):
+                        continue
+                    updated = await db.products.update_one(
+                        {"_id": ObjectId(pid), "shop_id": shop["id"], "stock": {"$gte": qty}},
+                        {"$inc": {"stock": -qty}},
+                        session=session,
+                    )
+                    if updated.modified_count != 1:
+                        raise HTTPException(409, f"Stock changed while processing {prod.get('name', 'product')}; please retry")
+                    await db.stock_movements.insert_one({
+                        "shop_id": shop["id"],
+                        "product_id": pid,
+                        "qty": -qty,
+                        "reason": f"sale#{order_no}",
+                        "created_at": doc["created_at"],
+                    }, session=session)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Checkout transaction failed: %s", exc)
+        raise HTTPException(503, "Checkout could not be completed atomically. Please retry.")
+
+    doc["id"] = order_id
+    doc.pop("_id", None)
+    return doc
+
+@api.get("/orders/shift-summary")
+async def shift_summary(started_at: str, shop: dict = Depends(get_shop)):
+    try:
+        start_dt = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
+    except ValueError:
+        raise HTTPException(400, "Invalid shift start time")
+    if start_dt.tzinfo is None:
+        start_dt = start_dt.replace(tzinfo=timezone.utc)
+    start_iso = start_dt.astimezone(timezone.utc).isoformat()
+
+    pipeline = [
+        {"$match": {"shop_id": shop["id"], "created_at": {"$gte": start_iso}}},
+        {"$group": {
+            "_id": None,
+            "total_bills": {"$sum": 1},
+            "total_sales": {"$sum": {"$ifNull": ["$total", 0]}},
+            "cash_sales": {"$sum": {"$cond": [{"$eq": ["$payment_method", "cash"]}, {"$ifNull": ["$total", 0]}, 0]}},
+            "upi_sales": {"$sum": {"$cond": [{"$in": ["$payment_method", ["upi", "qr"]]}, {"$ifNull": ["$total", 0]}, 0]}},
+            "card_sales": {"$sum": {"$cond": [{"$eq": ["$payment_method", "card"]}, {"$ifNull": ["$total", 0]}, 0]}},
+            "udhaar_sales": {"$sum": {"$cond": [{"$eq": ["$payment_method", "udhaar"]}, {"$ifNull": ["$total", 0]}, 0]}},
+        }},
+    ]
+    row = await db.orders.aggregate(pipeline).to_list(length=1)
+    summary = row[0] if row else {}
+    summary.pop("_id", None)
+    for key in ("total_bills", "cash_sales", "upi_sales", "card_sales", "udhaar_sales", "total_sales"):
+        if key not in summary:
+            summary[key] = 0
+    summary["total_bills"] = int(summary["total_bills"] or 0)
+    for key in ("cash_sales", "upi_sales", "card_sales", "udhaar_sales", "total_sales"):
+        summary[key] = float(summary[key] or 0)
+    return summary
+
 
 @api.get("/orders")
 async def list_orders(shop: dict = Depends(get_shop), status: Optional[str] = None, payment_method: Optional[str] = None, q: Optional[str] = None, limit: int = 200):
@@ -1774,7 +2094,13 @@ async def list_udhaar(shop: dict = Depends(get_shop_plan("business"))):
 async def udhaar_pay(body: UdhaarPaymentIn, shop: dict = Depends(get_shop_plan("business"))):
     remaining = float(body.amount)
     if remaining <= 0: raise HTTPException(400, "invalid amount")
-    cur = db.orders.find({"shop_id": shop["id"], "customer_id": str(body.customer_id), "pending_amount": {"$gt": 0}}).sort("created_at", 1)
+    customer_id = str(body.customer_id)
+    if not ObjectId.is_valid(customer_id):
+        raise HTTPException(400, "invalid customer")
+    customer = await db.customers.find_one({"_id": ObjectId(customer_id), "shop_id": shop["id"]})
+    if not customer:
+        raise HTTPException(404, "customer not found")
+    cur = db.orders.find({"shop_id": shop["id"], "customer_id": customer_id, "pending_amount": {"$gt": 0}}).sort("created_at", 1)
     async for o in cur:
         if remaining <= 0: break
         pay = min(remaining, float(o["pending_amount"]))
@@ -1821,6 +2147,10 @@ async def reports_summary(shop: dict = Depends(get_shop)):
 _whatsapp_reminder_task = None
 
 @app.on_event("startup")
+async def _ensure_rate_limit_index():
+    await db.rate_limits.create_index("expires_at", expireAfterSeconds=0)
+
+@app.on_event("startup")
 async def _start_whatsapp_reminder_loop():
     global _whatsapp_reminder_task
     if os.environ.get("AUTHKEY_API_KEY", "").strip():
@@ -1842,6 +2172,16 @@ async def _stop_whatsapp_reminder_loop():
 # =========================================================
 @app.get("/")
 async def root():
-    return {"ok":True,"service":"dukaan-api"}
+    return {"ok": True, "service": "kivo-api"}
+
+
+@app.get("/health")
+async def health():
+    try:
+        await db.command("ping")
+        return {"ok": True, "service": "kivo-api", "database": "ok"}
+    except Exception:
+        logger.exception("health_database_check_failed")
+        raise HTTPException(status_code=503, detail="Database unavailable")
 
 app.include_router(api)

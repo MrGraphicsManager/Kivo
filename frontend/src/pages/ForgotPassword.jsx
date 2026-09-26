@@ -22,15 +22,8 @@ export default function ForgotPassword() {
     setBusy(true); 
     setErr("");
     
-    // Store local fallback reset token and code
-    const localResetCode = String(Math.floor(100000 + Math.random() * 900000));
-    const localToken = "rst_" + Date.now();
-    try {
-      let resets = JSON.parse(localStorage.getItem("dukaan_password_resets") || "[]");
-      resets.push({ email: cleanEmail, code: localResetCode, token: localToken, expires_at: Date.now() + 3600000 });
-      localStorage.setItem("dukaan_password_resets", JSON.stringify(resets));
-    } catch {}
-
+    // Never create or persist password-reset secrets in browser storage.
+    // Reset codes/tokens are generated and validated by the server.
     try {
       await api.post("/auth/forgot-password", { email: cleanEmail });
       setSent(true);

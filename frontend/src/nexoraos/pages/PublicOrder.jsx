@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import axios from "axios";
@@ -50,24 +50,22 @@ export default function PublicOrder() {
   }, [cafe_id, table_id]);
 
   // Fetch table's active orders + reconcile with localStorage
-  const reloadActive = async () => {
+  const reloadActive = useCallback(async () => {
     if (!cafe_id) return;
     try {
       const { data } = await axios.get(`${API}/public/active-orders`, { params: { cafe_id, table_id: table_id || undefined } });
       setActiveOrders(data);
     } catch {}
-  };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cafe_id, table_id]);
   useEffect(() => {
     reloadActive();
     const t = setInterval(reloadActive, 5000);
     return () => clearInterval(t);
-  }, [cafe_id, table_id]);
+  }, [reloadActive]);
 
   const cats = data?.categories || [];
   const products = data?.products || [];
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const filtered = useMemo(() => products.filter(p => cat === "all" || p.category_id === cat), [data?.products, cat]);
+  const filtered = useMemo(() => products.filter(p => cat === "all" || p.category_id === cat), [products, cat]);
   const add = (p) => setCart(c => { const ex=c.find(i=>i.product_id===p.id); return ex?c.map(i=>i.product_id===p.id?{...i,qty:i.qty+1}:i):[...c,{product_id:p.id,name:p.name,price:p.price,qty:1}]; });
   const dec = (id) => setCart(c => c.flatMap(i => i.product_id!==id?[i]:(i.qty>1?[{...i,qty:i.qty-1}]:[])));
   const subtotal = cart.reduce((s,i)=>s+i.price*i.qty,0);
@@ -79,13 +77,12 @@ export default function PublicOrder() {
   const upiOn = data?.cafe?.upi_enabled;
 
   // Prefill from most recent active order (name/phone reuse)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (activeOrders?.length && !phone) {
       const last = activeOrders[0];
       if (last.customer_name && last.customer_name !== "Guest") setName(last.customer_name);
     }
-  }, [activeOrders]);
+  }, [activeOrders, phone]);
 
   const place = async () => {
     if (!phoneOk) return toast.error("Enter a valid 10-digit mobile number");

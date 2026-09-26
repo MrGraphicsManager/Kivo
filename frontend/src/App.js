@@ -92,31 +92,8 @@ function Protected({ children }) {
     return <Navigate to={`/verify-phone?email=${encodeURIComponent(user.email || "")}`} replace />;
   }
 
-  // Check subscription: from user state or fallback to localStorage
-  let sub = user.subscription;
-  if (!sub) {
-    try {
-      const stored = JSON.parse(localStorage.getItem("dukaan_user") || "{}");
-      if (stored?.subscription) sub = stored.subscription;
-    } catch {}
-  }
-  if (!sub && user.email) {
-    const clean = user.email.toLowerCase().trim();
-    try {
-      const allSubs = JSON.parse(localStorage.getItem("dukaan_all_subscriptions") || "{}");
-      if (allSubs[clean]) sub = allSubs[clean];
-    } catch {}
-    if (!sub) {
-      try {
-        const regUsers = JSON.parse(localStorage.getItem("dukaan_registered_users") || "[]");
-        const found = regUsers.find(u => u.email && u.email.toLowerCase() === clean);
-        if (found?.subscription) sub = found.subscription;
-      } catch {}
-    }
-  }
-
-  // Strict Gate 3: Merchant must buy subscription to access dashboard
-  const hasActiveSub = Boolean(isSubActive(sub));
+  // Subscription access is decided by server-fetched user state only.
+  const hasActiveSub = Boolean(isSubActive(user.subscription));
   if (!hasActiveSub) {
     return <Navigate to="/subscribe" replace />;
   }

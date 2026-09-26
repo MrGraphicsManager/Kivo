@@ -21,7 +21,6 @@ import {
   Edit2
 } from "lucide-react";
 import { toast } from "sonner";
-import { getStoredCustomers, saveStoredCustomers } from "@/pages/Customers";
 
 export default function CustomerDetail() {
   const { id } = useParams();
@@ -34,63 +33,24 @@ export default function CustomerDetail() {
   const [busy, setBusy] = useState(false);
 
   const loadData = () => {
-    // 1. First check local storage for real saved customer
-    const localCustomers = getStoredCustomers();
-    const foundLocal = localCustomers.find(x => x.id === id || x._id === id);
-
-    // 2. Fetch from API or fallback
     api.get(`/customers/${id}`)
-      .then(r => {
-        const cust = r.data || foundLocal;
-        if (cust) {
-          setC(cust);
-          setEditForm({ name: cust.name || "", phone: cust.phone || "", notes: cust.notes || "" });
-          loadCustomerOrders(cust);
+      .then((r) => {
+        const cust = r.data;
+        if (!cust) {
+          setC(null);
+          return;
         }
+        setC(cust);
+        setEditForm({ name: cust.name || "", phone: cust.phone || "", notes: cust.notes || "" });
+        loadCustomerOrders(cust);
       })
       .catch(() => {
-        if (foundLocal) {
-          setC(foundLocal);
-          setEditForm({ name: foundLocal.name || "", phone: foundLocal.phone || "", notes: foundLocal.notes || "" });
-          loadCustomerOrders(foundLocal);
-        } else {
-          // If ID not found, create a placeholder
-          const fallback = {
-            id,
-            name: "Customer #" + id.slice(-4),
-            phone: "",
-            notes: "",
-            created_at: new Date().toISOString()
-          };
-          setC(fallback);
-          setEditForm({ name: fallback.name, phone: "", notes: "" });
-          loadCustomerOrders(fallback);
-        }
+        setC(null);
       })
       .finally(() => setLoading(false));
   };
-
   const loadCustomerOrders = (customer) => {
-    try {
-      const rawOrders = localStorage.getItem("dukaan_orders");
-      const localOrders = rawOrders ? JSON.parse(rawOrders) : [];
-      const matching = localOrders.filter(o => 
-        (customer.name && o.customer_name?.toLowerCase() === customer.name.toLowerCase()) ||
-        (customer.phone && o.customer_phone === customer.phone) ||
-        (o.customer_id && o.customer_id === customer.id)
-      );
-
-      // Also merge server orders if any were attached
-      const combined = [...(Array.isArray(customer.orders) ? customer.orders : [])];
-      matching.forEach(mo => {
-        if (!combined.some(co => co.id === mo.id || co.order_no === mo.order_no)) {
-          combined.push(mo);
-        }
-      });
-      setOrders(combined);
-    } catch {
-      setOrders(Array.isArray(customer.orders) ? customer.orders : []);
-    }
+    setOrders(Array.isArray(customer?.orders) ? customer.orders : []);
   };
 
   useEffect(() => {
@@ -147,26 +107,18 @@ export default function CustomerDetail() {
       updated_at: new Date().toISOString()
     };
 
-    // ⚡ STEP 1: INSTANT LOCAL SAVE (0.001 SEC)
-    const all = getStoredCustomers();
-    const idx = all.findIndex(x => x.id === c.id || (x.phone && x.phone === c.phone));
-    let nextList;
-    if (idx >= 0) {
-      nextList = [...all];
-      nextList[idx] = { ...nextList[idx], ...updatedCustomer };
-    } else {
-      nextList = [updatedCustomer, ...all];
-    }
-    saveStoredCustomers(nextList);
+    api.put(`/customers/${c.id}`, updatedCustomer)
+      .then((r) => {
+        const saved = r.data || updatedCustomer;
+        setC(saved);
+        setEditForm({ name: saved.name || "", phone: saved.phone || "", notes: saved.notes || "" });
+        setEditOpen(false);
+        toast.success(`Customer "${saved.name}" details updated!`);
+      })
+      .catch((err) => {
+        toast.error(err?.response?.data?.detail || "Unable to update customer");
+      });
 
-    setC(updatedCustomer);
-    setEditOpen(false);
-    toast.success(`⚡ Customer "${updatedCustomer.name}" details updated!`);
-
-    // ⚡ STEP 2: ASYNC SERVER SYNC
-    if (!c.id?.startsWith("c_")) {
-      api.put(`/customers/${c.id}`, updatedCustomer).catch(() => {});
-    }
   };
 
   return (

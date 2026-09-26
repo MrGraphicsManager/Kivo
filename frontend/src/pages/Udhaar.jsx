@@ -26,7 +26,6 @@ import {
   ChevronRight,
   FileText
 } from "lucide-react";
-import { getStoredCustomers, saveStoredCustomers } from "@/pages/Customers";
 import { useAuth } from "@/lib/AuthContext";
 
 export default function Udhaar() {
@@ -47,82 +46,15 @@ export default function Udhaar() {
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(() => {
-    // 1. Load local customers
-    const localCustomers = getStoredCustomers();
-    setCustomers(localCustomers);
-
-    // 2. Read local orders to aggregate udhaar
-    let localOrders = [];
-    try {
-      localOrders = JSON.parse(localStorage.getItem("dukaan_orders") || "[]");
-    } catch {}
-
-    // Map of customer_id -> { customer_id, customer_name, customer_phone, pending, count, last_order_at }
-    const debtorMap = {};
-
-    // First populate from local customers that have pending udhaar
-    localCustomers.forEach(c => {
-      const pending = Number(c.total_pending || c.udhaar || 0);
-      if (pending > 0) {
-        debtorMap[c.id] = {
-          customer_id: c.id,
-          customer_name: c.name,
-          customer_phone: c.phone || "",
-          pending: pending,
-          count: 1,
-          last_order_at: c.updated_at || c.created_at || new Date().toISOString()
-        };
-      }
-    });
-
-    // Also check orders for any udhaar orders
-    localOrders.forEach(o => {
-      if (o.payment_method === "udhaar" || o.status === "udhaar" || o.payment === "Udhaar" || o.payment === "udhaar") {
-        const cName = o.customer_name || o.customer || "Walk-in Customer";
-        const cPhone = o.customer_phone || o.customerPhone || "";
-        const cId = o.customer_id || `cust_${cPhone || cName.replace(/\s+/g, "_")}`;
-        const pendingAmount = Number(o.pending_amount || o.total || 0);
-
-        if (!debtorMap[cId]) {
-          debtorMap[cId] = {
-            customer_id: cId,
-            customer_name: cName,
-            customer_phone: cPhone,
-            pending: pendingAmount,
-            count: 1,
-            last_order_at: o.created_at || o.date || new Date().toISOString()
-          };
-        }
-      }
-    });
-
-    // ⚡ CRITICAL FIX: Set rows from local immediately (0.001 sec synchronous!)
-    const initialRows = Object.values(debtorMap).filter(r => r.pending > 0);
-    initialRows.sort((a, b) => b.pending - a.pending);
-    setRows(initialRows);
-
-    // Try fetching from server in background
-    api.get("/udhaar")
-      .then(r => {
-        const serverRows = Array.isArray(r.data) ? r.data : [];
-        if (serverRows.length === 0) return;
-        serverRows.forEach(sr => {
-          if (sr.customer_id) {
-            debtorMap[sr.customer_id] = {
-              customer_id: sr.customer_id,
-              customer_name: sr.customer_name || debtorMap[sr.customer_id]?.customer_name || "Customer",
-              customer_phone: sr.customer_phone || debtorMap[sr.customer_id]?.customer_phone || "",
-              pending: Number(sr.pending || 0),
-              count: Number(sr.count || 1),
-              last_order_at: sr.last_order_at || debtorMap[sr.customer_id]?.last_order_at || new Date().toISOString()
-            };
-          }
-        });
-        const finalRows = Object.values(debtorMap).filter(r => r.pending > 0);
-        finalRows.sort((a, b) => b.pending - a.pending);
-        setRows(finalRows);
+    Promise.all([api.get("/udhaar"), api.get("/customers")])
+      .then(([udhaarRes, customersRes]) => {
+        setRows(Array.isArray(udhaarRes.data) ? udhaarRes.data : []);
+        setCustomers(Array.isArray(customersRes.data) ? customersRes.data : []);
       })
-      .catch(() => {});
+      .catch(() => {
+        setRows([]);
+        setCustomers([]);
+      });
   }, []);
 
   useEffect(() => { 
@@ -140,170 +72,70 @@ export default function Udhaar() {
   }, [load]);
 
 
-  // Record payment / settlement (0.001s instant save)
-  const submit = () => {
+  // Record payment / settlement. The server is the only source of truth.
+  const submit = async () => {
     const amt = Number(pay.amount || 0);
     if (!amt || amt <= 0) return toast.error("Enter a valid payment amount");
 
-    const targetCId = pay.row.customer_id;
-
-    // 1. Update dukaan_customers in localStorage
-    const localCusts = getStoredCustomers();
-    const cIdx = localCusts.findIndex(c => c.id === targetCId || (c.phone && c.phone === pay.row.customer_phone));
-    if (cIdx >= 0) {
-      const current = localCusts[cIdx];
-      const newPending = Math.max(0, Number(current.total_pending || current.udhaar || 0) - amt);
-      const updated = {
-        ...current,
-        total_pending: newPending,
-        udhaar: newPending,
-        total_paid: Number(current.total_paid || 0) + amt,
-        updated_at: new Date().toISOString()
-      };
-      localCusts[cIdx] = updated;
-      saveStoredCustomers(localCusts);
-    }
-
-    // 2. Update dukaan_orders in localStorage (mark pending udhaar orders as paid)
     try {
-      let orders = JSON.parse(localStorage.getItem("dukaan_orders") || "[]");
-      let remAmt = amt;
-      orders = orders.map(o => {
-        if (remAmt <= 0) return o;
-        const matches = o.customer_id === targetCId || (pay.row.customer_phone && o.customer_phone === pay.row.customer_phone);
-        if (matches && (o.status === "udhaar" || Number(o.pending_amount || 0) > 0)) {
-          const curPending = Number(o.pending_amount || o.total || 0);
-          const payTowards = Math.min(remAmt, curPending);
-          const newPending = curPending - payTowards;
-          remAmt -= payTowards;
-          return {
-            ...o,
-            pending_amount: newPending,
-            paid_amount: Number(o.paid_amount || 0) + payTowards,
-            status: newPending <= 0 ? "paid" : "udhaar"
-          };
-        }
-        return o;
+      await api.post("/udhaar/pay", {
+        customer_id: pay.row.customer_id,
+        amount: amt,
+        note: pay.note,
       });
-      localStorage.setItem("dukaan_orders", JSON.stringify(orders));
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("dukaan_orders_updated", { detail: orders }));
-      }
-    } catch {}
-
-    toast.success(`⚡ Payment of ${money(amt)} received from ${pay.row.customer_name}!`);
-    setPay({ open: false, row: null, amount: "", note: "" });
-    load();
-
-    // 3. Sync to API in background (fire-and-forget)
-    api.post("/udhaar/pay", { 
-      customer_id: targetCId, 
-      amount: amt,
-      note: pay.note 
-    }).catch(() => {});
+      toast.success(`Payment of ${money(amt)} received from ${pay.row.customer_name}!`);
+      setPay({ open: false, row: null, amount: "", note: "" });
+      load();
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || "Could not record payment");
+    }
   };
 
-  // Add new Udhaar credit entry directly (0.001s instant save)
-  const handleAddUdhaar = (e) => {
+  // Add a new Udhaar credit entry through the API.
+  const handleAddUdhaar = async (e) => {
     e.preventDefault();
     const amt = Number(addModal.amount || 0);
-    if (!amt || amt <= 0) {
-      toast.error("Please enter a valid credit amount");
-      return;
-    }
-
-    let targetCust = null;
-    if (addModal.customerId && addModal.customerId !== "new") {
-      targetCust = customers.find(c => c.id === addModal.customerId);
-    } else {
-      if (!addModal.newName.trim()) {
-        toast.error("Customer name is required");
-        return;
-      }
-      targetCust = {
-        id: `c_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-        name: addModal.newName.trim(),
-        phone: addModal.newPhone.trim(),
-        notes: "Created from Udhaar Book",
-        total_purchases: 0,
-        totalSpent: 0,
-        total_paid: 0,
-        total_pending: 0,
-        udhaar: 0,
-        created_at: new Date().toISOString()
-      };
-    }
-
-    if (!targetCust) {
-      toast.error("Please select or enter customer details");
-      return;
-    }
-
-    // 1. Update customer in local storage immediately
-    const localCusts = getStoredCustomers();
-    const idx = localCusts.findIndex(c => c.id === targetCust.id || (targetCust.phone && c.phone === targetCust.phone));
-    let updatedCust;
-    if (idx >= 0) {
-      updatedCust = {
-        ...localCusts[idx],
-        total_purchases: Number(localCusts[idx].total_purchases || localCusts[idx].totalSpent || 0) + amt,
-        totalSpent: Number(localCusts[idx].total_purchases || localCusts[idx].totalSpent || 0) + amt,
-        total_pending: Number(localCusts[idx].total_pending || localCusts[idx].udhaar || 0) + amt,
-        udhaar: Number(localCusts[idx].total_pending || localCusts[idx].udhaar || 0) + amt,
-        updated_at: new Date().toISOString()
-      };
-      localCusts[idx] = updatedCust;
-    } else {
-      updatedCust = {
-        ...targetCust,
-        total_purchases: amt,
-        totalSpent: amt,
-        total_pending: amt,
-        udhaar: amt,
-        updated_at: new Date().toISOString()
-      };
-      localCusts.unshift(updatedCust);
-    }
-    saveStoredCustomers(localCusts);
-
-    // 2. Add an Udhaar Order in localStorage immediately
-    const newOrder = {
-      id: `ord_udh_${Date.now()}`,
-      order_no: `UDH-${Math.floor(1000 + Math.random() * 9000)}`,
-      total: amt,
-      paid_amount: 0,
-      pending_amount: amt,
-      payment_method: "udhaar",
-      status: "udhaar",
-      customer_id: updatedCust.id,
-      customer_name: updatedCust.name,
-      customer_phone: updatedCust.phone || "",
-      note: addModal.note || "Direct Udhaar Khata entry",
-      items: [{ name: addModal.note || "Khata Credit", qty: 1, price: amt }],
-      created_at: new Date().toISOString()
-    };
+    if (!amt || amt <= 0) return toast.error("Please enter a valid credit amount");
 
     try {
-      const orders = JSON.parse(localStorage.getItem("dukaan_orders") || "[]");
-      const updatedOrders = [newOrder, ...orders];
-      localStorage.setItem("dukaan_orders", JSON.stringify(updatedOrders));
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("dukaan_orders_updated", { detail: updatedOrders }));
+      let customerId = addModal.customerId;
+      let customerName = "";
+
+      if (customerId && customerId !== "new") {
+        const selected = customers.find(c => c.id === customerId);
+        customerName = selected?.name || "Customer";
+      } else {
+        if (!addModal.newName.trim()) return toast.error("Customer name is required");
+        const customerRes = await api.post("/customers", {
+          name: addModal.newName.trim(),
+          phone: addModal.newPhone.trim(),
+          notes: "Created from Udhaar Book",
+        });
+        customerId = customerRes.data?.id;
+        customerName = customerRes.data?.name || addModal.newName.trim();
       }
-    } catch {}
 
-    toast.success(`⚡ Udhaar of ${money(amt)} recorded for ${updatedCust.name}!`);
-    setAddModal({ open: false, customerId: "", newName: "", newPhone: "", amount: "", note: "" });
-    load();
+      if (!customerId) return toast.error("Could not create/select customer");
 
-    // 3. Fire-and-forget sync to server
-    api.post("/orders", {
-      items: newOrder.items,
-      discount: 0,
-      customer_id: updatedCust.id,
-      payment_method: "udhaar",
-      note: addModal.note || "Direct Udhaar"
-    }).catch(() => {});
+      await api.post("/orders", {
+        items: [{
+          product_id: "",
+          name: addModal.note.trim() || "Khata Credit",
+          qty: 1,
+          price: amt,
+        }],
+        discount: 0,
+        customer_id: customerId,
+        payment_method: "udhaar",
+        note: addModal.note || "Direct Udhaar",
+      });
+
+      toast.success(`Udhaar of ${money(amt)} recorded for ${customerName}!`);
+      setAddModal({ open: false, customerId: "", newName: "", newPhone: "", amount: "", note: "" });
+      load();
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || "Could not record Udhaar");
+    }
   };
 
   const { user, shops, currentShopId } = useAuth();

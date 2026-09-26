@@ -21,14 +21,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-const FALLBACK_BILLS = [
-  { id: "bill-1023", billNo: "1023", customer: "Walk-in Customer", items: 3, amount: 450, date: "12 Sep, 12:32 PM", paymentMethod: "Cash" },
-  { id: "bill-1022", billNo: "1022", customer: "Ramesh Patel", items: 5, amount: 1280, date: "12 Sep, 11:15 AM", paymentMethod: "UPI" },
-  { id: "bill-1021", billNo: "1021", customer: "Walk-in Customer", items: 1, amount: 120, date: "12 Sep, 10:48 AM", paymentMethod: "Cash" },
-  { id: "bill-1020", billNo: "1020", customer: "Amit Sharma", items: 4, amount: 980, date: "12 Sep, 09:21 AM", paymentMethod: "UPI" },
-  { id: "bill-1019", billNo: "1019", customer: "Neha Verma", items: 2, amount: 320, date: "12 Sep, 09:05 AM", paymentMethod: "Cash" },
-];
-
 export default function Dashboard() {
   const nav = useNavigate();
   const { user, currentShopId, shops } = useAuth();
@@ -39,17 +31,6 @@ export default function Dashboard() {
 
   const activeShop = (shops || []).find(s => s?.id === currentShopId) || shops?.[0];
 
-  const getSafeOrders = useCallback(() => {
-    try {
-      const raw = localStorage.getItem("dukaan_orders");
-      if (!raw) return [];
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  }, []);
-
   const loadDashboard = useCallback(async () => {
     try {
       const [dashboardRes, ordersRes] = await Promise.all([
@@ -57,8 +38,7 @@ export default function Dashboard() {
         api.get("/orders", { params: { limit: 10 } }).catch(() => null),
       ]);
       const data = dashboardRes?.data || {};
-      const localOrders = getSafeOrders();
-      const orders = (Array.isArray(ordersRes?.data) && ordersRes.data.length > 0) ? ordersRes.data : localOrders;
+      const orders = Array.isArray(ordersRes?.data) ? ordersRes.data : [];
 
       setD({
         recent_orders: orders,
@@ -66,13 +46,13 @@ export default function Dashboard() {
       });
     } catch (e) {
       setD({
-        recent_orders: getSafeOrders(),
+        recent_orders: [],
         today: {},
       });
     } finally {
       setLoading(false);
     }
-  }, [getSafeOrders]);
+  }, []);
 
   useEffect(() => {
     loadDashboard();
@@ -156,18 +136,7 @@ export default function Dashboard() {
       };
     });
 
-    if (formattedLive.length >= 5) {
-      return formattedLive;
-    }
-
-    // Append fallback bills so table is complete & realistic
-    const combined = [...formattedLive];
-    FALLBACK_BILLS.forEach(fb => {
-      if (combined.length < 5 && !combined.some(c => c.billNo === fb.billNo)) {
-        combined.push(fb);
-      }
-    });
-    return combined;
+    return formattedLive;
   }, [d?.recent_orders]);
 
   const handleShareWhatsApp = (bill) => {

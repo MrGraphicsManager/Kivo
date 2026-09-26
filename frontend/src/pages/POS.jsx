@@ -59,8 +59,6 @@ import { useTheme } from "@/contexts/ThemeContext";
 import VoiceBillingModal from "@/components/pos/VoiceBillingModal";
 import CustomerDisplayModal from "@/components/pos/CustomerDisplayModal";
 import SplitPaymentModal from "@/components/pos/SplitPaymentModal";
-import { getStoredProducts, saveStoredProducts } from "@/lib/defaultProducts";
-import { getStoredCustomers, saveStoredCustomers } from "@/pages/Customers";
 import { useAuth } from "@/lib/AuthContext";
 import { getProThemeSettings } from "@/lib/proCustomizations";
 import { 
@@ -153,14 +151,14 @@ export default function POS() {
   const userPlan = user?.subscription?.plan || "starter";
   const isPremium = userPlan === "premium" || user?.is_premium || user?.is_admin;
 
-  const [products, setProducts] = useState(() => getStoredProducts());
+  const [products, setProducts] = useState([]);
   const [q, setQ] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [cart, setCart] = useState([]); // {product_id, name, price, qty, unit}
   const [discount, setDiscount] = useState(0);
   const [discountType, setDiscountType] = useState("flat"); // "flat" or "percent"
   const [customerId, setCustomerId] = useState("");
-  const [customers, setCustomers] = useState(() => getStoredCustomers());
+  const [customers, setCustomers] = useState([]);
   const [shop, setShop] = useState(null);
 
   // New Dukaan 3.0 POS States (Matching Screenshot)
@@ -215,6 +213,7 @@ export default function POS() {
   // Shift Handover Modal State (F9)
   const [shiftHandoverOpen, setShiftHandoverOpen] = useState(false);
   const [countedCashInput, setCountedCashInput] = useState("");
+  const [shiftStatsServer, setShiftStatsServer] = useState(null);
 
   const activeCashierName = isCashierModeActive() 
     ? getActiveCashierName(currentShopId) 
@@ -341,62 +340,40 @@ export default function POS() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cart, customerId, discount, discountType, heldCart, currentShopId, activeCartSlot, cartSlots]);
 
-  // Shift Handover Computation (F9)
+  // Shift Handover Summary (F9) — aggregated server-side from authoritative orders.
   const currentShift = getCurrentShift() || {
     cashier_name: activeCashierName,
     started_at: new Date().toISOString(),
     opening_cash: 0
   };
 
-  const shiftOrders = useMemo(() => {
-    try {
-      const orders = JSON.parse(localStorage.getItem("dukaan_orders") || "[]");
-      const startTime = currentShift?.started_at ? new Date(currentShift.started_at).getTime() : 0;
-      return orders.filter(o => {
-        const orderTime = o.created_at ? new Date(o.created_at).getTime() : 0;
-        return orderTime >= startTime;
+  useEffect(() => {
+    if (!shiftHandoverOpen || !currentShift?.started_at) return;
+    let cancelled = false;
+    api.get("/orders/shift-summary", { params: { started_at: currentShift.started_at } })
+      .then(res => {
+        if (!cancelled) setShiftStatsServer(res?.data || null);
+      })
+      .catch(() => {
+        if (!cancelled) setShiftStatsServer(null);
       });
-    } catch {
-      return [];
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentShift?.started_at, shiftHandoverOpen]);
+    return () => { cancelled = true; };
+  }, [shiftHandoverOpen, currentShift?.started_at]);
 
   const shiftStats = useMemo(() => {
-    let cashSales = 0;
-    let upiSales = 0;
-    let cardSales = 0;
-    let udhaarSales = 0;
-
-    shiftOrders.forEach(o => {
-      const amt = Number(o.total || 0);
-      const m = (o.payment_method || "cash").toLowerCase();
-      if (m === "cash") cashSales += amt;
-      else if (m === "upi" || m === "qr") upiSales += amt;
-      else if (m === "card") cardSales += amt;
-      else if (m === "udhaar") udhaarSales += amt;
-      else cashSales += amt;
-    });
-
-    const totalSales = cashSales + upiSales + cardSales + udhaarSales;
+    const cashSales = Number(shiftStatsServer?.cash_sales || 0);
+    const upiSales = Number(shiftStatsServer?.upi_sales || 0);
+    const cardSales = Number(shiftStatsServer?.card_sales || 0);
+    const udhaarSales = Number(shiftStatsServer?.udhaar_sales || 0);
+    const totalSales = Number(shiftStatsServer?.total_sales || 0);
+    const totalBills = Number(shiftStatsServer?.total_bills || 0);
     const openingCash = Number(currentShift?.opening_cash || 0);
     const expectedCash = openingCash + cashSales;
     const countedCash = countedCashInput === "" ? expectedCash : Number(countedCashInput) || 0;
     const variance = countedCash - expectedCash;
 
-    return {
-      cashSales,
-      upiSales,
-      cardSales,
-      udhaarSales,
-      totalSales,
-      totalBills: shiftOrders.length,
-      openingCash,
-      expectedCash,
-      countedCash,
-      variance
-    };
-  }, [shiftOrders, currentShift?.opening_cash, countedCashInput]);
+    return { cashSales, upiSales, cardSales, udhaarSales, totalSales, totalBills, openingCash, expectedCash, countedCash, variance };
+  }, [shiftStatsServer, currentShift?.opening_cash, countedCashInput]);
 
   const handlePrintHandoverSlip = () => {
     const shopName = shop?.name || activeShop?.name || "Apni Dukaan";
@@ -509,47 +486,19 @@ export default function POS() {
   };
 
   useEffect(() => {
-    api.get("/products")
-      .then(r => setProducts(Array.isArray(r.data) && r.data.length > 0 ? r.data : getStoredProducts()))
-      .catch(() => setProducts(getStoredProducts()));
-
-    let localCusts = [];
-    try {
-      const raw = localStorage.getItem("dukaan_customers");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) localCusts = parsed;
-      }
-    } catch {}
-
-    api.get("/customers")
-      .then(r => {
-        const serverCusts = Array.isArray(r.data) ? r.data : [];
-        const merged = [...serverCusts];
-        localCusts.forEach(lc => {
-          if (!merged.some(m => (m.id && m.id === lc.id) || (m.phone && lc.phone && m.phone === lc.phone))) {
-            merged.push(lc);
-          }
-        });
-        setCustomers(merged.length > 0 ? merged : localCusts);
+    Promise.all([api.get("/products"), api.get("/customers"), api.get("/shops")])
+      .then(([productsRes, customersRes, shopsRes]) => {
+        setProducts(Array.isArray(productsRes.data) ? productsRes.data : []);
+        setCustomers(Array.isArray(customersRes.data) ? customersRes.data : []);
+        const list = Array.isArray(shopsRes.data) ? shopsRes.data : [];
+        setShop(list.find(s => s.id === currentShopId) || list[0] || null);
       })
-      .catch(() => setCustomers(localCusts));
+      .catch(() => {
+        setProducts([]);
+        setCustomers([]);
+      });
+  }, [currentShopId]);
 
-    api.get("/shops").then(r => {
-      const shopId = localStorage.getItem("dukaan_shop_id");
-      const list = Array.isArray(r.data) ? r.data : [];
-      setShop(list.find(s => s.id === shopId) || list[0]);
-    });
-
-    const handleProds = () => setProducts(getStoredProducts());
-    const handleCusts = () => setCustomers(getStoredCustomers());
-    window.addEventListener("dukaan_products_updated", handleProds);
-    window.addEventListener("dukaan_customers_updated", handleCusts);
-    return () => {
-      window.removeEventListener("dukaan_products_updated", handleProds);
-      window.removeEventListener("dukaan_customers_updated", handleCusts);
-    };
-  }, []);
 
   // Compute categories (Matching Mockup)
   const categories = useMemo(() => {
@@ -692,51 +641,29 @@ export default function POS() {
     setCustomerId("");
   };
 
-  const createCustomer = () => {
+  const createCustomer = async () => {
     if (!newCustomer.name.trim()) {
       toast.error("Customer name is required");
       return;
     }
-    const newC = {
-      id: `c_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-      name: newCustomer.name.trim(),
-      phone: newCustomer.phone.trim(),
-      notes: "Added from POS",
-      total_purchases: 0,
-      totalSpent: 0,
-      total_paid: 0,
-      total_pending: 0,
-      udhaar: 0,
-      created_at: new Date().toISOString()
-    };
 
-    let stored = [];
     try {
-      stored = JSON.parse(localStorage.getItem("dukaan_customers") || "[]");
-    } catch {}
-    const updated = [newC, ...stored];
-    saveStoredCustomers(updated);
+      const res = await api.post("/customers", {
+        name: newCustomer.name.trim(),
+        phone: newCustomer.phone.trim(),
+        notes: "Added from POS"
+      });
+      const created = res?.data;
+      if (!created?.id) throw new Error("Customer was not created");
 
-    setCustomers(prev => [newC, ...prev]);
-    setCustomerId(newC.id);
-    setNewCustomer({ open: false, name: "", phone: "" });
-    toast.success(`⚡ Customer "${newC.name}" added and selected!`);
-
-    api.post("/customers", newC).then(res => {
-      if (res?.data?.id) {
-        newC.id = res.data.id;
-        try {
-          const cur = JSON.parse(localStorage.getItem("dukaan_customers") || "[]");
-          const idx = cur.findIndex(c => c.phone === newC.phone || c.id === newC.id);
-          if (idx !== -1) {
-            cur[idx].id = res.data.id;
-            saveStoredCustomers(cur);
-          }
-        } catch {}
-      }
-    }).catch(() => {});
+      setCustomers(prev => [created, ...prev.filter(c => c.id !== created.id)]);
+      setCustomerId(created.id);
+      setNewCustomer({ open: false, name: "", phone: "" });
+      toast.success(`Customer "${created.name}" added and selected!`);
+    } catch (error) {
+      toast.error(error?.response?.data?.detail || "Unable to create customer");
+    }
   };
-
   // Pricing math
   const subtotal = cart.reduce((acc, it) => acc + (it.price * it.qty), 0);
   const discountAmount = discountType === "percent" 
@@ -748,49 +675,8 @@ export default function POS() {
   // Selected customer details
   const selectedCustomerObj = customers.find(c => c.id === customerId);
 
-  const deductStockAndSync = (cartItems) => {
-    const currentProds = getStoredProducts();
-    const updated = currentProds.map(p => {
-      const item = cartItems.find(ci => ci.product_id === p.id);
-      if (item && !p.unlimited_stock) {
-        const newStock = Math.max(0, Number(p.stock || 0) - Number(item.qty || 0));
-        return { ...p, stock: newStock };
-      }
-      return p;
-    });
-    saveStoredProducts(updated);
-    setProducts(updated);
-  };
-
-  const updateCustomerLedger = (orderData) => {
-    if (!selectedCustomerObj && !customerId) return;
-    try {
-      const stored = JSON.parse(localStorage.getItem("dukaan_customers") || "[]");
-      const cId = customerId || selectedCustomerObj?.id;
-      const updated = stored.map(c => {
-        if (c.id === cId || (orderData.customer_phone && c.phone === orderData.customer_phone)) {
-          const tot = Number(orderData.total || 0);
-          const isUdhaar = orderData.payment_method === "udhaar";
-          const newPending = Number(c.total_pending || c.udhaar || 0) + (isUdhaar ? tot : 0);
-          const newPurchases = Number(c.total_purchases || c.totalSpent || 0) + tot;
-          return {
-            ...c,
-            total_purchases: newPurchases,
-            totalSpent: newPurchases,
-            total_paid: Number(c.total_paid || 0) + (isUdhaar ? 0 : tot),
-            total_pending: newPending,
-            udhaar: newPending,
-            updated_at: new Date().toISOString()
-          };
-        }
-        return c;
-      });
-      saveStoredCustomers(updated);
-    } catch {}
-  };
-
-  // Bill submission (0.001s instant save)
-  const handleCompleteBill = () => {
+  // Server-authoritative checkout
+  const handleCompleteBill = async () => {
     if (cart.length === 0) {
       toast.error("Cart is empty");
       return;
@@ -799,169 +685,73 @@ export default function POS() {
       toast.error("Please select a customer for Udhaar");
       return;
     }
-
-    const orderId = `ord_${Date.now()}`;
-    const orderNo = `OD-${Date.now().toString().slice(-4)}`;
-    const now = new Date();
-
-    const order = {
-      id: orderId,
-      order_no: orderNo,
-      total,
-      subtotal,
-      discount: discountAmount,
-      payment_method: method,
-      status: method === "udhaar" ? "udhaar" : "paid",
-      pending_amount: method === "udhaar" ? total : 0,
-      paid_amount: method === "udhaar" ? 0 : total,
-      customer_id: customerId || null,
-      customer_name: selectedCustomerObj?.name || "Walk-in Customer",
-      customer_phone: selectedCustomerObj?.phone || "",
-      created_at: now.toISOString(),
-      items: cart,
-      change: method === "cash" && Number(amountReceived) > total ? Number(amountReceived) - total : 0,
-      billed_by: activeCashierName
-    };
-
-    const billData = {
-      order_no: orderNo,
-      id: orderId,
-      total,
-      payment_method: method,
-      items: cart,
-      customer_name: selectedCustomerObj?.name || "Walk-in Customer",
-      customer_phone: selectedCustomerObj?.phone || "",
-      change: order.change,
-      billed_by: activeCashierName
-    };
-
-    // ⚡ STEP 1: INSTANT LOCAL SAVE IN 0.001 SEC
-    const savedOrders = JSON.parse(localStorage.getItem("dukaan_orders") || "[]");
-    const updatedOrders = [order, ...savedOrders];
-    localStorage.setItem("dukaan_orders", JSON.stringify(updatedOrders));
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("dukaan_orders_updated", { detail: updatedOrders }));
-    }
-
-    // Deduct purchased items from stock immediately
-    deductStockAndSync(cart);
-    // Update customer ledger immediately
-    updateCustomerLedger(order);
-
-    setPayOpen(false);
-    setCompletedBill(billData);
-    setWaPhone(selectedCustomerObj?.phone || "");
-
-    toast.success(`⚡ Bill #${orderNo} created successfully!`);
-
-    // Soundbox voice announcement (Premium only)
-    const isChimeMuted = localStorage.getItem("dukaan_payment_alert_chime") === "false";
-    if (soundboxEnabled && isPremium && !isChimeMuted) {
-      playVoiceSoundbox(total, method, lang);
-    }
-
-    // Auto-reset after 6 seconds for next customer
-    const timer = setTimeout(() => {
-      setCompletedBill(null);
-      clearCart();
-    }, 6000);
-    setAutoResetTimer(timer);
-
-    // ⚡ STEP 2: ASYNC SERVER SYNC (FIRE-AND-FORGET)
-    const payload = {
-      items: cart,
-      discount: Number(discountAmount || 0),
-      customer_id: customerId || null,
-      payment_method: method,
-      amount_received: method === "cash" ? Number(amountReceived || total) : null,
-    };
-
-    api.post("/orders", payload).then(res => {
-      if (res?.data?.id) {
-        try {
-          const list = JSON.parse(localStorage.getItem("dukaan_orders") || "[]");
-          const idx = list.findIndex(o => o.id === orderId);
-          if (idx !== -1) {
-            list[idx].id = res.data.id;
-            if (res.data.order_no) list[idx].order_no = res.data.order_no;
-            localStorage.setItem("dukaan_orders", JSON.stringify(list));
-          }
-        } catch {}
-      }
-    }).catch(() => {});
-  };
-
-  // Dukaan 3.0 Split Payment Processor
-  const handleSplitPaymentConfirm = ({ payment_mode, split }) => {
-    if (cart.length === 0) {
-      toast.error("Cart is empty");
+    if (method === "cash" && Number(amountReceived || 0) < total) {
+      toast.error("Amount received cannot be less than the bill total");
       return;
     }
 
-    const orderId = `ord_${Date.now()}`;
-    const orderNo = `OD-${Date.now().toString().slice(-4)}`;
-    const now = new Date();
+    setBusy(true);
+    try {
+      const payload = {
+        items: cart.map(item => ({
+          product_id: item.product_id,
+          name: item.name,
+          price: Number(item.price || 0),
+          qty: Number(item.qty || 0)
+        })),
+        discount: Number(discountAmount || 0),
+        customer_id: customerId || null,
+        payment_method: method,
+        amount_received: method === "cash" ? Number(amountReceived || total) : null,
+        note: orderNote || ""
+      };
 
-    const order = {
-      id: orderId,
-      order_no: orderNo,
-      total,
-      subtotal,
-      discount: discountAmount,
-      payment_method: "split",
-      split_breakdown: split,
-      status: split.khata > 0 ? "partial_udhaar" : "paid",
-      pending_amount: split.khata || 0,
-      paid_amount: (split.cash || 0) + (split.upi || 0) + (split.card || 0),
-      customer_id: split.khata_customer_id || customerId || null,
-      customer_name: selectedCustomerObj?.name || "Split Payment Customer",
-      customer_phone: selectedCustomerObj?.phone || "",
-      created_at: now.toISOString(),
-      items: cart,
-      change: split.change_due || 0,
-      billed_by: activeCashierName
-    };
+      const res = await api.post("/orders", payload);
+      const serverOrder = res?.data;
+      if (!serverOrder?.id) throw new Error("Server did not return an order");
 
-    const billData = {
-      order_no: orderNo,
-      id: orderId,
-      total,
-      payment_method: "split",
-      items: cart,
-      customer_name: selectedCustomerObj?.name || "Split Payment Customer",
-      customer_phone: selectedCustomerObj?.phone || "",
-      change: split.change_due || 0,
-      billed_by: activeCashierName
-    };
+      const billData = {
+        ...serverOrder,
+        order_no: serverOrder.order_no || `OD-${String(serverOrder.id).slice(-4)}`,
+        items: cart,
+        total: Number(serverOrder.total ?? total),
+        payment_method: method,
+        customer_name: selectedCustomerObj?.name || "Walk-in Customer",
+        customer_phone: selectedCustomerObj?.phone || "",
+        change: method === "cash" ? Math.max(0, Number(amountReceived || 0) - total) : 0,
+        billed_by: activeCashierName
+      };
 
-    const savedOrders = JSON.parse(localStorage.getItem("dukaan_orders") || "[]");
-    const updatedOrders = [order, ...savedOrders];
-    localStorage.setItem("dukaan_orders", JSON.stringify(updatedOrders));
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("dukaan_orders_updated", { detail: updatedOrders }));
+      setPayOpen(false);
+      setCompletedBill(billData);
+      setWaPhone(selectedCustomerObj?.phone || "");
+      setProducts(prev => prev.map(p => {
+        const item = cart.find(ci => ci.product_id === p.id);
+        if (!item || p.unlimited_stock) return p;
+        return { ...p, stock: Math.max(0, Number(p.stock || 0) - Number(item.qty || 0)) };
+      }));
+
+      toast.success(`Bill #${billData.order_no} created successfully!`);
+      if (soundboxEnabled && isPremium && localStorage.getItem("dukaan_payment_alert_chime") !== "false") {
+        playVoiceSoundbox(billData.total, method, lang);
+      }
+
+      const timer = setTimeout(() => {
+        setCompletedBill(null);
+        clearCart();
+      }, 6000);
+      setAutoResetTimer(timer);
+    } catch (error) {
+      toast.error(error?.response?.data?.detail || "Unable to create bill. Nothing was charged.");
+    } finally {
+      setBusy(false);
     }
+  };
 
-    deductStockAndSync(cart);
-    updateCustomerLedger(order);
-
-    if (playAudioChime) playAudioChime("success");
-    setCompletedBill(billData);
-    setWaPhone(selectedCustomerObj?.phone || "");
-
-    toast.success(`⚡ Split Bill #${orderNo} created successfully!`);
-
-    const isChimeMuted = localStorage.getItem("dukaan_payment_alert_chime") === "false";
-    if (soundboxEnabled && isPremium && !isChimeMuted) {
-      playVoiceSoundbox(total, "split", lang);
-    }
-
-    const timer = setTimeout(() => {
-      setCompletedBill(null);
-      clearCart();
-    }, 6000);
-    setAutoResetTimer(timer);
-
-    api.post("/orders", order).catch(() => {});
+  // Split tender remains disabled until the backend supports atomic multi-tender checkout.
+  const handleSplitPaymentConfirm = () => {
+    setSplitPaymentOpen(false);
+    toast.error("Split payment is temporarily unavailable. Use Cash, UPI, or Udhaar.");
   };
 
   const handleSendWhatsAppBill = (billToShare) => {

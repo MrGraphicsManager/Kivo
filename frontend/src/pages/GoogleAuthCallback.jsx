@@ -148,19 +148,7 @@ export default function GoogleAuthCallback() {
 
         if (loginRes.ok) {
           const userObj = loginRes.user;
-          let sub = userObj?.subscription;
-          if (!sub) {
-            try {
-              const localUser = JSON.parse(localStorage.getItem("dukaan_user") || "{}");
-              sub = localUser.subscription;
-            } catch {}
-          }
-          if (!sub && userObj?.email) {
-            try {
-              const allSubs = JSON.parse(localStorage.getItem("dukaan_all_subscriptions") || "{}");
-              sub = allSubs[userObj.email.toLowerCase().trim()];
-            } catch {}
-          }
+          const sub = userObj?.subscription || null;
           const isSubActive = (s) => {
             if (!s) return false;
             const st = (s.status || "").toLowerCase();

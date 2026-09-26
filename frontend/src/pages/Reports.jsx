@@ -72,18 +72,7 @@ export default function Reports() {
       api.get("/products").catch(() => ({ data: [] })),
     ]).then(([ordRes, custRes, prodRes]) => {
       const serverOrders = Array.isArray(ordRes.data) ? ordRes.data : [];
-      let localOrders = [];
-      try {
-        localOrders = JSON.parse(localStorage.getItem("dukaan_orders") || "[]");
-      } catch {}
-      const allOrders = [...serverOrders];
-      localOrders.forEach(lo => {
-        if (!allOrders.some(o => (o.id && o.id === lo.id) || (o.order_no && o.order_no === lo.order_no))) {
-          allOrders.push(lo);
-        }
-      });
-
-      setOrders(allOrders);
+      setOrders(serverOrders);
       setCustomers(Array.isArray(custRes.data) ? custRes.data : []);
       setProducts(Array.isArray(prodRes.data) ? prodRes.data : []);
     }).finally(() => setLoading(false));

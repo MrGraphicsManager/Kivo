@@ -1,10 +1,10 @@
-# 🛍️ Dukaan — Cloud Retail Operating System & Smart POS
+# 🛍️ Kivo — Cloud Retail Operating System & Smart POS
 
 <div align="center">
 
-![Dukaan Banner](https://img.shields.io/badge/Dukaan-Retail%20OS%20v2.0-blue?style=for-the-badge&logo=react)
+![Kivo Banner](https://img.shields.io/badge/Kivo-Retail%20OS%20v2.0-blue?style=for-the-badge&logo=react)
 ![PEAN Studio](https://img.shields.io/badge/Studio-PEAN%20Ecosystem-purple?style=for-the-badge)
-![Status](https://img.shields.io/badge/Production-Ready-emerald?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-Production%20Hardening-orange?style=for-the-badge)
 
 **A high-performance, low-latency Point of Sale (POS) and retail management platform built for modern Indian Kirana, grocery, and pharmacy counters.**
 
@@ -16,7 +16,7 @@
 
 ## 🚀 Overview
 
-**Dukaan** is an end-to-end retail operating system engineered to eliminate checkout queues and digitize small business counter operations. Developed from the ground up to solve the real bottlenecks faced by physical stores, Dukaan brings sub-second keyboard checkout, native thermal hardware spooling, real-time multi-device sync, and automated customer credit recovery via WhatsApp.
+**Kivo** is an end-to-end retail operating system engineered to eliminate checkout queues and digitize small business counter operations. Developed from the ground up to solve the real bottlenecks faced by physical stores, Kivo brings sub-second keyboard checkout, native thermal hardware spooling, real-time multi-device sync, and automated customer credit recovery via WhatsApp.
 
 A flagship venture engineered under the **PEAN** technology studio.
 
@@ -24,13 +24,12 @@ A flagship venture engineered under the **PEAN** technology studio.
 
 ## ⚡ Key Engineering Highlights
 
-### 1. ⏱️ 0.8-Second Checkout Engine
+### 1. ⏱️ Fast POS Checkout
 - **F1–F6 Keyboard Shortcuts:** Cashiers can search products, modify quantities, select payment modes, and dispatch bills without touching a mouse.
 - **Sub-Second Latency:** Client-side optimistic cart operations and fast indexed item lookups guarantee zero lag at high-volume counters.
 
 ### 2. 🔄 Real-Time Distributed Terminal Synchronization
 - **Server-Sent Events (SSE) & ntfy.sh Event Bus:** Multiple counter tablets, barcode scanners, and back-office inventory dashboards synchronize state in real time without heavy polling.
-- **Zero-Refresh Updates:** Store announcements, maintenance locks, and catalog adjustments propagate instantly across all active merchant sessions.
 
 ### 3. 🖨️ Native ESC/POS Thermal Receipt Engine
 - **58mm & 80mm ESC/POS Standard:** Direct browser-based spooler formatting clean monochrome receipts with dashed line separators and barcode numbers.
@@ -56,32 +55,43 @@ A flagship venture engineered under the **PEAN** technology studio.
 
 | Domain | Technologies |
 | :--- | :--- |
-| **Frontend** | React 18, Vite, Tailwind CSS, Lucide React, Framer Motion |
-| **Backend / API** | Node.js, Express.js, RESTful APIs, Server-Sent Events (SSE) |
-| **Database & Cache** | SQLite / PostgreSQL, LocalStorage Offline Fallback Sync |
-| **Hardware / Protocol** | ESC/POS Thermal Printing, Webhooks, WhatsApp API |
-| **Tooling & Build** | Craco, PostCSS, ESLint, Git & GitHub |
+| **Frontend** | React, Create React App (CRACO), Tailwind CSS, Lucide React, Framer Motion |
+| **Backend / API** | FastAPI, REST API, Vercel/Netlify proxy |
+| **Database** | MongoDB + Motor |
+| **Payments** | Razorpay |
+| **Email / Notifications** | Configurable email provider + WhatsApp integration |
+| **Tooling & Build** | Node.js, npm, Git & GitHub |
 
 ---
 
 ## 🏗️ System Architecture
 
 ```
-[ Barcode Scanner / F1-F6 Counter ]
-               │
-               ▼
-   [ Dukaan POS Client (React 18) ]
-   ├── Client-side Cart & Tax Calculation (0.8s)
-   ├── Local-first Cache & Offline Storage
-   └── Responsive View Engine (Mobile Drawer / Desktop Grid)
-         │                   │                    │
-         ▼                   ▼                    ▼
-[ ESC/POS Spooler ]   [ WhatsApp API ]   [ SSE Event Bus (ntfy.sh) ]
-  • 58mm/80mm Paper     • Digital Memo     • Multi-device Store Sync
-  • Cut & Margin Test   • Udhaar Reminders • Instant Announcement Lock
+[ Browser / POS ]
+       │
+       ▼
+[ React + CRACO frontend ]
+       │
+       │ HTTPS / HttpOnly auth cookie
+       ▼
+[ Vercel / Netlify API proxy ]
+       │
+       ▼
+[ FastAPI ]
+       │
+       ├── Authentication & authorization
+       ├── Products / inventory
+       ├── Customers / Udhaar
+       ├── Orders / reports
+       └── Subscriptions / Razorpay
+       │
+       ▼
+[ MongoDB ]
+       │
+       └── Transactions for atomic checkout
 ```
 
----
+**Production source of truth:** FastAPI + MongoDB. Browser storage is not used as the authority for authentication, ownership, inventory, orders, customers, or subscriptions.
 
 ## 💻 Quick Start
 
@@ -92,18 +102,18 @@ A flagship venture engineered under the **PEAN** technology studio.
 ### Installation
 ```bash
 # Clone repository
-git clone https://github.com/MrGraphicsManager/Dukaan.git
-cd Dukaan
+git clone https://github.com/MrGraphicsManager/Kivo.git
+cd Kivo
 
 # Install frontend dependencies
 cd frontend
 npm install
 
 # Start local development server
-npm run dev
+npm start
 ```
 
-Visit `http://localhost:5173` to launch Dukaan.
+Visit `http://localhost:3000` to launch Kivo.
 
 ---
 
@@ -119,3 +129,12 @@ Visit `http://localhost:5173` to launch Dukaan.
 
 ## 📄 License
 This project is open-source and available under the [MIT License](LICENSE).
+
+
+## Production backend configuration
+
+Kivo uses the FastAPI + MongoDB backend as the production source of truth. Configure the deployment environment variable `KIVO_BACKEND_URL` to the deployed FastAPI base URL (for example, `https://api.example.com/api`). Do not point it at the legacy Netlify stateful function.
+
+Required backend variables include `MONGO_URL`, `DB_NAME`, `JWT_SECRET`, `CORS_ORIGINS`, `ADMIN_EMAIL`, and the payment/email provider secrets used by enabled features.
+
+MongoDB production deployment must support replica sets or MongoDB transactions (for example, Atlas). Kivo checkout uses a transaction to commit the order, stock decrement, and stock movement records atomically; a standalone MongoDB server is not supported for production checkout.
