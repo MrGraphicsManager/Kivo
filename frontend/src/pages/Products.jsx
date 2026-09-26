@@ -159,7 +159,7 @@ export default function Products() {
     api.get("/products", { params: { q: q || undefined, category } })
       .then(r => setItems(Array.isArray(r.data) ? r.data : []))
       .catch(() => setItems([]));
-  }, [loadProducts]);
+  }, [q, category]);
 
   const handleBarcodeLookup = (code) => {
     if (!code) return;
