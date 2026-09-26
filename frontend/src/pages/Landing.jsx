@@ -445,6 +445,46 @@ export default function Landing() {
           </div>
         </section>
 
+        {/* Kivo Product Family */}
+        <section className="mt-24 max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-10">
+            <span className="inline-flex items-center px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-600 text-[10px] font-black uppercase tracking-[0.18em]">
+              Kivo Ecosystem
+            </span>
+            <h2 className="mt-3 text-3xl sm:text-4xl font-black font-display text-slate-900 tracking-tight">
+              One brand. Multiple tools.
+            </h2>
+            <p className="mt-3 text-sm text-slate-500 max-w-xl mx-auto">
+              Explore the Kivo products built for retail operations, teams, subscriptions and merchant workflows.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {[
+              { src: "/kivo-pro.png", alt: "Kivo Pro", href: "/pro-plan" },
+              { src: "/kivo-premium.png", alt: "Kivo Premium", href: "/premium-plan" },
+              { src: "/kivo-cafe.png", alt: "Kivo Cafe Plan", href: "/subscribe?plan=cafe" },
+              { src: "/kivo-pro-studio.png", alt: "Kivo Pro Studio", href: "/pro-studio" },
+              { src: "/kivo-ai.png", alt: "Kivo AI", href: "/pro-studio" },
+              { src: "/kivo-grid.png", alt: "Kivo Grid", href: "/app" },
+              { src: "/kivo-admin.png", alt: "Kivo Admin", href: "/admin" },
+            ].map((item) => (
+              <Link
+                key={item.alt}
+                to={item.href}
+                className="group min-h-24 rounded-2xl border border-slate-200 bg-white p-4 flex items-center justify-center shadow-xs hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md transition-all"
+              >
+                <img
+                  src={item.src}
+                  alt={item.alt}
+                  className="max-h-14 max-w-full w-auto object-contain transition-transform group-hover:scale-[1.03]"
+                  loading="lazy"
+                />
+              </Link>
+            ))}
+          </div>
+        </section>
+
         {/* 6. Direct WhatsApp Floating Action */}
         <div className="mt-24 p-8 rounded-3xl bg-gradient-to-r from-emerald-50 via-white to-blue-50 border border-emerald-200/80 text-center max-w-3xl mx-auto shadow-sm">
           <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-700 mx-auto flex items-center justify-center mb-3">
