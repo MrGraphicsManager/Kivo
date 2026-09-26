@@ -128,6 +128,41 @@ export function AuthProvider({ children }) {
     };
   }, [refresh]);
 
+  const register = async (name, email, password, referralCode = "") => {
+    const cleanName = (name || "").trim();
+    const cleanEmail = (email || "").toLowerCase().trim();
+
+    if (!cleanName) return { ok: false, error: "Please enter your name or shop name." };
+    if (!cleanEmail) return { ok: false, error: "Please enter your email address." };
+    if (!password) return { ok: false, error: "Please enter a password." };
+    if (password.length < 8 || !/[A-Z]/.test(password) || !/[0-9]/.test(password) || !/[!@#$%^&*(),.?":{}|<>\-_+=\[\]\\/\`~]/.test(password)) {
+      return { ok: false, error: "Password must be at least 8 characters and include a capital letter, a number, and a symbol." };
+    }
+
+    try {
+      const { data } = await api.post("/auth/register", {
+        name: cleanName,
+        email: cleanEmail,
+        password,
+        ...(referralCode ? { referral_code: referralCode.trim().toUpperCase() } : {})
+      });
+
+      return {
+        ok: Boolean(data?.ok),
+        needVerification: Boolean(data?.need_verification),
+        email: data?.email || cleanEmail,
+        user: data?.user || null,
+        shop_id: data?.shop_id || null,
+        message: data?.message || "Account created. Please verify your email.",
+      };
+    } catch (err) {
+      return {
+        ok: false,
+        error: formatApiError(err.response?.data?.detail) || "Unable to create your account. Please try again."
+      };
+    }
+  };
+
   const login = async (email, password) => {
     const cleanEmail = (email || "").toLowerCase().trim();
     if (!cleanEmail) return { ok: false, error: "Please enter your email address." };
